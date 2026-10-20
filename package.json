@@ -1,0 +1,24 @@
+{
+  "name": "gauntlet-html",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Turns the Gauntlet markdown volumes into a static, interactive HTML workbook.",
+  "type": "module",
+  "engines": { "node": ">=22.18" },
+  "scripts": {
+    "build": "node src/build.ts",
+    "serve": "node src/serve.ts",
+    "start": "node src/build.ts && node src/serve.ts",
+    "report": "node src/build.ts --report",
+    "test": "node --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "markdown-it": "^14.1.0"
+  },
+  "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

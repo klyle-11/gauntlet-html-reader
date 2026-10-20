@@ -2,7 +2,19 @@
 
 A local tool that parses the Gauntlet markdown volumes into an interactive HTML workbook, so each module can be worked through in the browser alongside your own code, notes and decisions.
 
-> Status: **pre-scaffold**. Only this README and [`ASSESSMENT.md`](ASSESSMENT.md) exist so far. Read the assessment before you write the parser.
+It is entirely web-based: a Node build step writes a static HTML site (about 2 MB, with no framework and no client-side build). That site is the export. Open `site/index.html` from disk, serve it, or copy the folder anywhere.
+
+## Quick start
+
+```sh
+npm install          # markdown-it only; the rest are dev tools
+npm run build        # docs/ → site/  (or: npm run build -- --out ../my-export)
+npm run serve        # http://127.0.0.1:4317/  (optional; file:// works too)
+npm test             # module counts, section mapping, link integrity
+npm run report       # sections that fell through to "extra"
+```
+
+Requires Node 22.18 or newer, which runs the TypeScript sources directly.
 
 ## Source documents (`docs/`)
 
@@ -30,20 +42,43 @@ The volume number comes from build order, not from the filename or the title ins
    - a measure-ritual log for recording numbers, plus a parking lot
 4. **Re-parse safely**: editing a source `.md` and rebuilding must never lose your work. Work is keyed by a stable module key, not by position.
 
-## Proposed stack
+## Stack
 
-- **Node + TypeScript** build step: `markdown-it` (with `html: true` for the `<details>` hint blocks) plus a custom splitter that turns the docs into `modules.json`.
-- **Vite** front end. **CodeMirror 6** for code input and **mermaid** for the diagrams in volume V.
-- **Persistence**: a small dev-server endpoint that writes to `workspace/<moduleKey>/` (code files and `notes.json`), so the work is plain files you can open in your editor and commit. `localStorage` is used only for UI state.
+- **Build** (`src/build.ts`, `src/parser/`, `src/render/`): TypeScript run directly by Node, using `markdown-it` (`html: true` for the `<details>` hint blocks) plus a fence-aware splitter driven by `volumes.json`. Each module and each reading page becomes its own flat `.html` file.
+- **Client** (`src/client/app.js`, `app.css`): one dependency-free script that adds the widgets on top of the rendered prose. If an extractor finds nothing, the page still reads correctly.
+- **Diagrams**: `mermaid` fences render as diagrams. Mermaid is loaded from a CDN only on the pages that use it, or from `node_modules/mermaid` if you install it (`npm i -D mermaid`) for fully offline use. With neither available, the source is shown instead.
+- **Persistence**: always `localStorage`. In Chromium browsers (Chrome, Edge, Arc) you can also pick a **workspace folder** on the home page. Each module is then written as `<folder>/<moduleKey>/notes.json` plus your code files as real files, and on load the newer copy wins. Any browser can **export or import** all work as one JSON file, and each module can download its notes as Markdown.
 
-## Planned layout
+### Why not Tauri or Electron
+
+Nothing here needs a native shell. The File System Access API covers "real files on disk", and the output is plain HTML. If you later want a desktop window, Tauri can point `frontendDist` at `site/` without changes. The only extra work would be swapping the folder-picker storage for Tauri's fs plugin.
+
+## What the widgets do
+
+| Where | Widget |
+|---|---|
+| Acceptance criteria, slow walk, prove it | checkboxes |
+| Decision map | a DSA note per item: chosen option, reasons, rejected alternative, why not |
+| Research targets | a timer button for each `N min` it finds, plus "done when met". The timer follows you across pages, chimes when time is up, and logs the session |
+| Hint ladder | rungs reveal one at a time, and the near-spoiler stays locked until you log the attempts it asks for |
+| Measure ritual | a dated log of numbers |
+| Workspace (bottom of each module) | code files, a parking lot, your own checklist, and notes whose source text changed |
+
+Widget state is keyed by module key plus a hash of the item's text, not by position, so re-parsing after reordering a source never moves a note. If an item's text is edited, its old note is shown under "Notes on text that changed" rather than dropped.
+
+## Layout
 
 ```
 docs/                  source markdown (read-only input)
-volumes.json           manifest: file → volume number, title, ID prefix, schema
-src/parser/            split → normalize → emit modules.json
-src/app/               Vite UI
-workspace/             your code + notes per module (gitignored or committed, your call)
+volumes.json           manifest: file → volume number, title, ID prefix, heading level, expected count
+src/parser/            split → normalize → modules, reading pages, stack groups
+src/render/            markdown-it setup (heading ids, cross-references, anchor rewriting) and page templates
+src/client/            app.js + app.css, copied into site/assets/
+src/build.ts           writes site/
+src/serve.ts           tiny static server for site/
+test/                  node:test suite
+site/                  build output (gitignored)
+workspace/             suggested workspace folder (gitignored or committed, your call)
 ```
 
 ## Module keys

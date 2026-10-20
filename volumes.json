@@ -1,0 +1,69 @@
+{
+  "volumes": [
+    {
+      "id": "I",
+      "title": "The Gauntlet — Volume I",
+      "file": "docs/0 The_Gauntlet_Complete.md",
+      "from": "# The Gauntlet — Volume I",
+      "to": "# The Gauntlet — Volume II",
+      "idPrefix": "M",
+      "moduleLevel": 2,
+      "schema": "classic",
+      "expectModules": 25
+    },
+    {
+      "id": "II",
+      "title": "The Gauntlet — Volume II",
+      "file": "docs/0 The_Gauntlet_Complete.md",
+      "from": "# The Gauntlet — Volume II",
+      "idPrefix": "M",
+      "moduleLevel": 2,
+      "schema": "classic",
+      "expectModules": 21
+    },
+    {
+      "id": "III",
+      "title": "The Gauntlet III — Systems, Networks, Clients & Craft",
+      "file": "docs/The_Gauntlet_III.md",
+      "idPrefix": "M",
+      "moduleLevel": 1,
+      "schema": "classic",
+      "expectModules": 13
+    },
+    {
+      "id": "IV",
+      "title": "The Gauntlet IV — Microsoft Enterprise Developer",
+      "file": "docs/The_Gauntlet_IV_Microsoft_Enterprise_Developer.md",
+      "idPrefix": "M",
+      "moduleLevel": 1,
+      "schema": "enterprise",
+      "expectModules": 12
+    },
+    {
+      "id": "V",
+      "title": "The Reading Room Gauntlet",
+      "subtitle": "Inside “The Local-First Library Suite” build guide",
+      "file": "docs/local_first_reader_build_guide_v0_1 (1).md",
+      "idPrefix": "RR",
+      "moduleLevel": 2,
+      "schema": "guide",
+      "expectModules": 13
+    },
+    {
+      "id": "VI",
+      "title": "The Gauntlet VI — Marginalia: Read, Mark, Remember",
+      "note": "The source file calls itself “Gauntlet IV” and is named THE_GAUNTLET_V.md. It was written after V, so it is volume VI here.",
+      "file": "docs/THE_GAUNTLET_V.md",
+      "idPrefix": "M",
+      "moduleLevel": 1,
+      "schema": "classic",
+      "expectModules": 18
+    }
+  ],
+  "stackIndex": {
+    "file": "docs/The_Gauntlet_By_Stack.md",
+    "volumes": ["I", "II"],
+    "groupLevel": 1,
+    "moduleLevel": 2
+  }
+}
