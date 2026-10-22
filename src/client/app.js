@@ -99,6 +99,7 @@
     measures: [],
     parking: [],
     todo: [],
+    gf: {},
     files: {},
   });
 
@@ -385,7 +386,7 @@
       Store.save(state);
       updateProgress();
     };
-    const seen = { checks: new Set(), dsa: new Set(), research: new Set(), hints: new Set() };
+    const seen = { checks: new Set(), dsa: new Set(), research: new Set(), hints: new Set(), gf: new Set() };
 
     // Checklists: acceptance criteria, slow-walk steps, prove-it rooms.
     const checkLists = [
@@ -394,7 +395,19 @@
         return p && p.tagName === 'P' && /acceptance criteria/i.test(p.textContent);
       }),
       ...$$('section[data-canonical=slowwalk] > ol, section[data-canonical=prove] > ul', main),
+      ...groundFloorChecks(),
     ];
+    /** Lists under a Ground Floor "Check yourself" heading, up to the next heading. */
+    function groundFloorChecks() {
+      const out = [];
+      for (const hd of $$('section[data-canonical=groundfloor] :is(h3, h4)', main)) {
+        if (!/check yourself/i.test(hd.textContent)) continue;
+        for (let el = hd.nextElementSibling; el && !/^H\d$/.test(el.tagName); el = el.nextElementSibling)
+          if (el.tagName === 'UL' || el.tagName === 'OL') out.push(el);
+      }
+      return out;
+    }
+
     for (const list of new Set(checkLists)) {
       const sec = list.closest('section').dataset.section;
       list.classList.add('checklist');
@@ -415,6 +428,38 @@
         li.classList.toggle('done', !!state.checks[id]?.done);
         li.prepend(box);
       }
+    }
+
+    // Ground Floor: each GF step gets a done box and a notes field.
+    for (const hd of $$('section[data-canonical=groundfloor] :is(h3, h4)', main)) {
+      const text = norm(hd.textContent);
+      if (!/^GF\.\d+/.test(text)) continue;
+      const id = `gf:${hash(text)}`;
+      seen.gf.add(id);
+      const g = () => (state.gf[id] ||= { text, done: false, notes: '' });
+      const done = h('input', {
+        type: 'checkbox',
+        checked: state.gf[id]?.done,
+        onchange: () => {
+          Object.assign(g(), { done: done.checked, at: now() });
+          hd.classList.toggle('done', done.checked);
+          save();
+        },
+      });
+      hd.classList.toggle('done', !!state.gf[id]?.done);
+      const notes = h('textarea', {
+        rows: 3,
+        value: state.gf[id]?.notes || '',
+        placeholder: 'What you looked up, what was painful, what you noticed and left alone…',
+        oninput: debounce(() => {
+          Object.assign(g(), { notes: notes.value, at: now() });
+          summary.textContent = notesLabel();
+          save();
+        }, 300),
+      });
+      const notesLabel = () => (state.gf[id]?.notes ? 'Your notes ✓' : 'Notes');
+      const summary = h('summary', notesLabel());
+      hd.after(h('div.gf-tools', h('label.check', done, ' Step done'), h('details.gf-notes', summary, notes)));
     }
 
     // Decision map: one DSA note per item.
@@ -741,6 +786,7 @@
         ...Object.entries(state.dsa).filter(([id, d]) => !seen.dsa.has(id) && (d.chosen || d.reasons)).map(([id, d]) => ['dsa', id, `Decision: ${d.title} → ${d.chosen}`]),
         ...Object.entries(state.checks).filter(([id, c]) => !seen.checks.has(id) && c.done).map(([id, c]) => ['checks', id, `Checked: ${c.text}`]),
         ...Object.entries(state.research).filter(([id, r]) => !seen.research.has(id) && (r.done || r.sessions?.length)).map(([id, r]) => ['research', id, `Research: ${r.text}`]),
+        ...Object.entries(state.gf).filter(([id, g]) => !seen.gf.has(id) && (g.done || g.notes)).map(([id, g]) => ['gf', id, `Ground Floor: ${g.text}${g.notes ? ` — ${g.notes}` : ''}`]),
       ];
       if (!lost.length) return '';
       return h(
@@ -780,6 +826,7 @@
 
   function progressOf(state, seen) {
     const ids = [...seen.checks].map((id) => !!state.checks[id]?.done)
+      .concat([...seen.gf].map((id) => !!state.gf[id]?.done))
       .concat([...seen.dsa].map((id) => !!state.dsa[id]?.chosen))
       .concat([...seen.research].map((id) => !!state.research[id]?.done));
     return { done: ids.filter(Boolean).length, total: ids.length };
@@ -792,6 +839,12 @@
   function toMarkdown(main, s) {
     const out = [`# ${main.dataset.title}`, '', `Key: \`${s.key}\` · exported ${fmtDate(now())}`, ''];
     const sec = (t) => out.push(`## ${t}`, '');
+    const gf = Object.values(s.gf || {}).filter((g) => g.done || g.notes);
+    if (gf.length) {
+      sec('Ground Floor');
+      for (const g of gf) out.push(`- [${g.done ? 'x' : ' '}] **${g.text}**${g.notes ? `\n\n  ${g.notes.replace(/\n/g, '\n  ')}\n` : ''}`);
+      out.push('');
+    }
     const dsa = Object.values(s.dsa).filter((d) => d.chosen || d.reasons);
     if (dsa.length) {
       sec('Decisions (DSA)');

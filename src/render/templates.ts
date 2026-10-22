@@ -72,7 +72,7 @@ export function sectionId(canonical: string, heading: string, seen: Set<string>)
 export interface ModuleView {
   module: Module;
   volume: Volume;
-  sectionsHtml: { id: string; canonical: string; heading: string; html: string }[];
+  sectionsHtml: { id: string; canonical: string; heading: string; html: string; steps: { id: string; label: string }[] }[];
   stackHtml?: string;
   prev?: { href: string; label: string };
   next?: { href: string; label: string };
@@ -82,7 +82,13 @@ export function moduleBody(v: ModuleView): string {
   const m = v.module;
   const toc = v.sectionsHtml
     .filter((s) => s.heading || SECTION_LABEL[s.canonical])
-    .map((s) => `<li><a href="#${s.id}">${esc(s.heading || SECTION_LABEL[s.canonical])}</a></li>`)
+    .map((s) => {
+      const label = s.canonical === 'groundfloor' ? 'Ground Floor' : s.heading || SECTION_LABEL[s.canonical];
+      const steps = s.steps.length
+        ? `<ol class="toc-steps">${s.steps.map((st) => `<li><a href="#${st.id}">${esc(st.label)}</a></li>`).join('')}</ol>`
+        : '';
+      return `<li><a href="#${s.id}" title="${esc(s.heading)}">${esc(label)}</a>${steps}</li>`;
+    })
     .join('');
   const secs = v.sectionsHtml
     .map((s) => {
