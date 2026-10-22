@@ -349,7 +349,7 @@ Before Spring, build the endpoint once with nothing but the JDK, so you know exa
 
 Start the app with the Maven wrapper. Then use `curl -i` against: the list, the list filtered by author, an id that exists, an id that doesn't, and an id that isn't a number. Read every status line and every body.
 
-Two things to notice and **not fix yet**:
+**Notice and leave alone:**
 
 1. **Is your internal field in the responses?** If so, every client can now see it and come to depend on it. That's M1's first trap.
 2. **Compare the not-found response with the non-numeric-id response.** Did anyone design either shape? That's M1's second trap.
@@ -2692,7 +2692,7 @@ Two programs, running at the same time, that never finish. Plus a question whose
 
 **Build:** an endpoint that accepts a reading and appends it to a `readings` table. Reuse whichever framework you built earlier.
 
-**Look up:** `timestamptz` in Postgres (M2's Ground Floor touched it); `INSERT` as an append-only pattern; and returning 201 Created vs 200 OK vs 202 Accepted.
+**Look up:** `timestamp` vs `timestamptz` in Postgres (M2 had you choose how time is stored); `INSERT` as an append-only pattern; and returning 201 Created vs 200 OK vs 202 Accepted.
 
 #### GF.4 — Asking about a window of time
 
@@ -4093,6 +4093,8 @@ You never edit core. You attach to it.
 - Mixing PHP and HTML in one file, and why that's both the convenience and the danger
 - Running PHP on the command line to try things
 
+**Do:** from the command line, run a scratch PHP file that uses one array as a list and another as a map, and print one value from each.
+
 #### GF.3 — WordPress locally
 
 **Do:** run WordPress on your machine. Local (by Flywheel), Docker's official WordPress image, or `wp-env` all work.
@@ -4571,6 +4573,8 @@ WRITE (danger): walk ─▶ decide ─▶ rename / move    ← no undo
 - `is_file`, `is_dir`, `is_symlink`, and which of them follow links
 - `os.walk`, `os.scandir`, and `Path.rglob`, as three ways to walk. Choosing is M25's first decision.
 
+**Do:** print the `stat()` results for a file, a folder, and your GF.2 symlink, with and without following the link. Which fields change?
+
 #### GF.4 — A read-only reporter
 
 **Build:** a command-line tool that walks a folder and prints each file's path and size, then the total size per top-level folder, like `du`. It only reads. Run it on the sandbox.
@@ -4811,6 +4815,8 @@ M1–M2 only read. This is the first time data flows in.
 - HTML forms: `<form>`, `<textarea>`, `<button type="submit">`, and what the browser does on submit by default (a full page navigation)
 - `event.preventDefault()`, and why you call it when submitting with `fetch` instead
 - Controlled inputs in React, and clearing the field after a successful submit
+
+**Do:** submit a plain HTML form with no JavaScript and watch the Network tab. What method and `Content-Type` went out, and what happened to the page?
 
 #### GF.3 — Sending data
 
@@ -5114,8 +5120,8 @@ viewport = the visible window; 100vh = its height (mostly — phones complicate 
 
 scroll position ──▶ which panel, how far through it ──▶ visual state
 
-Cheap to change:  transform, opacity            → COMPOSITE only (GPU)
-Costly to change: top, height, width, margin    → LAYOUT, then PAINT, then COMPOSITE
+Some properties are cheap to change; others make the browser redo layout and paint.
+Which are which is GF.4's look-up.
 ```
 
 #### GF.2 — The viewport
@@ -5452,6 +5458,8 @@ The element is the source of truth. Your UI is a reflection of it.
 
 **Look up:** browser autoplay policies (Chrome's and Safari's); that `play()` returns a promise; and what a "user activation" is (M27's Ground Floor touched it).
 
+**Question to settle:** why would a browser let a page play muted video on load, but not sound?
+
 #### GF.5 — Run it and observe
 
 **Notice and leave alone:**
@@ -5572,6 +5580,8 @@ _Two modules of code that leaves the sandbox: a desktop app that must reach the 
 #### GF.2 — Processes, as a concept
 
 **Look up:** what an OS process is; why processes can't read each other's memory; inter-process communication (IPC), in general terms; and why Chrome runs each tab in its own process.
+
+**Do:** count Chrome's processes in your OS's task manager, open one new tab, and count again.
 
 #### GF.3 — Electron, the first hour
 
@@ -5732,6 +5742,8 @@ No processes, no files unless you mount them, no screen unless you draw it.
 - SPI: four wires, chip select, and how several devices can share one bus
 - Pull-up resistors, as a concept
 - 3.3V vs 5V logic, and why connecting the wrong one can damage the ESP32
+
+**Do:** from your board's pinout, write down its default I2C and SPI pins.
 
 #### GF.5 — The OLED on its own
 
@@ -6014,6 +6026,8 @@ The kernel keeps this table. Tools like ss, netstat, and lsof read it for you.
 - Well-known ports vs ephemeral ports
 - TCP vs UDP, and why UDP "connections" look different in these tools
 
+**Do:** take one request from DevTools or `curl -v` and write out its 4-tuple.
+
 #### GF.3 — Reading your own socket table
 
 **Do:** on your own machine (WSL, Linux, or macOS), list connections with `ss -tunap` or `netstat`, and with `lsof -i`. On Windows itself, try `netstat -ano` and Resource Monitor.
@@ -6192,7 +6206,16 @@ You can't prove a claim you can't restate precisely. That's what this Ground Flo
 
 **Question to settle:** was there a step where the justification was "it's obvious"? Could you replace it with a real one?
 
-#### GF.7 — Hand-off: what's yours in M35
+#### GF.7 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Test "n² + n + 41 is prime for every natural number n"** for n = 0 through 10. Does it hold every time? Does that prove it? Don't look further yet. That's M35's trap.
+2. **Your two truth tables from GF.2.** What would their matching columns let you do in a proof? Don't use it yet. That's M35's first decision.
+3. **List three "for every n" facts you've relied on in code,** such as a loop that always ends or a sum formula. What do they have in common? That's the second decision.
+4. **Your "obvious" step from GF.6.** That's the fifth decision.
+
+#### GF.8 — Hand-off: what's yours in M35
 
 | Ground Floor left this… | M35 asks you to… |
 |---|---|
@@ -6205,7 +6228,7 @@ You can't prove a claim you can't restate precisely. That's what this Ground Flo
 
 Then read the Briefing below.
 
-#### GF.8 — Check yourself before moving on
+#### GF.9 — Check yourself before moving on
 
 - Why is "if P then Q" true when P is false?
 - What's the contrapositive of "if it compiles, the tests pass," and is it equivalent to the original?
@@ -7473,6 +7496,8 @@ detach an instance        ──▶ it never updates again
 
 **Look up:** color styles, text styles, and Figma variables; and what a design token is outside Figma.
 
+**Question to settle:** how many different blues are on a site you use every day? How would anyone change all of them at once?
+
 #### GF.6 — Prototyping
 
 **Look up:** prototype mode, connections between frames, and presenting a prototype.
@@ -7593,6 +7618,8 @@ Tab A (offline)          Tab B (offline)
 
 **Look up:** Andy Matuschak's writing on spaced repetition and the mnemonic medium.
 
+**Question to settle:** which of the seven ideals does a typical cloud notes app give up, and which does your GF.3 page already meet?
+
 #### GF.3 — IndexedDB
 
 **Look up:** object stores, keys, and transactions; why the raw API is awkward; a small wrapper like `idb`; and the Application tab in DevTools, where you can inspect what's stored.
@@ -7711,7 +7738,7 @@ Kill the network, edit the same card (or add cards) on two peers, reconnect. **T
 
 ### Ground Floor — A room on a canvas
 
-*Read this before the Briefing. It assumes M7, M19, and M45's Ground Floors: a broadcast socket, a game loop, and the idea of a CRDT. It doesn't assume you've put them together in a browser. You'll get a single sprite moving around a canvas room and send its position to another window the dumb way first. This tells you what each piece is for and what to look up, never how to write it. Awareness vs document, transport, world representation, loop structure, and smoothing are the module's.*
+*Read this before the Briefing. It assumes M7, M17, and M45's Ground Floors: a broadcast socket, a frame loop with delta time, and the idea of a CRDT. M19's game loop helps too. It doesn't assume you've put them together in a browser. You'll get a single sprite moving around a canvas room and send its position to another window the dumb way first. This tells you what each piece is for and what to look up, never how to write it. Awareness vs document, transport, world representation, loop structure, and smoothing are the module's.*
 
 #### GF.1 — The picture first
 

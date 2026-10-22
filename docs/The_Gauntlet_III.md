@@ -1133,6 +1133,8 @@ Postgres's view:  SELECT * FROM pg_stat_activity   ← every connection and its 
 
 **Look up:** Psycopg 3's transaction behavior: when a transaction starts implicitly; `commit`, `rollback`, and autocommit mode; and what state a connection is in after a statement fails.
 
+**Question to settle:** your route only runs a `SELECT`. Is a transaction open afterward, and how would you find out?
+
 ### GF.5 — Configuration
 
 **Look up:** Flask's `app.config`; loading settings from environment variables; and keeping a database URL out of source (M2's Ground Floor touched this).
@@ -1303,6 +1305,8 @@ goal: rows ─▶ role ─▶ blocks (paragraph | code | list | link) ─▶ JSO
 ### GF.4 — Text, three ways
 
 **Look up:** `textContent` vs `innerText` (layout-aware, includes or skips hidden text) vs walking child nodes yourself; and how `<pre>` and `<code>` mark code.
+
+**Do:** on any page, compare `textContent` and `innerText` for one element that contains a hidden child and a `<br>`.
 
 ### GF.5 — Your own fixture
 
@@ -1676,6 +1680,8 @@ HANDOFF                    the owner edits without you
 
 **Look up:** the WCAG basics: color contrast ratios, keyboard navigation, alt text, and form labels; page titles and meta descriptions; Open Graph tags for link previews; and running Lighthouse in DevTools.
 
+**Do:** run Lighthouse on a local business's site and note its lowest category and the top reason why.
+
 ### GF.5 — A throwaway site, natively
 
 **Build:** in one or two sittings, a one-page site for an invented business on the free tier of any builder: what it does, hours, location, and one call to action. Use only the builder's own controls, with no custom code at all.
@@ -1848,13 +1854,15 @@ an identity:                 a few of those choices, held fixed across every art
 
 ### GF.3 — Type, from zero
 
-**Look up:** type anatomy (x-height, baseline, cap height, ascender, descender); serif, sans, slab, and display classifications; weight and width within one family; measure (line length), leading, and tracking; and a modular type scale (M44's Ground Floor touched it).
+**Look up:** type anatomy (x-height, baseline, cap height, ascender, descender); serif, sans, slab, and display classifications; weight and width within one family; measure (line length), leading, and tracking; and a modular type scale (M44 had you choose one).
 
 **Do:** set the same paragraph three ways, with different leading and measure, and say which reads best and why.
 
 ### GF.4 — Grids and composition
 
 **Look up:** Josef Müller-Brockmann's grid systems, as history; column grids vs modular grids; margins and gutters; and breaking the grid on purpose.
+
+**Do:** draw a column grid over a screenshot of a magazine page and find one place it breaks the grid on purpose.
 
 ### GF.5 — Color and output
 
@@ -2023,6 +2031,8 @@ character = { body: "a", hair: "short", hat: "none", shirt: "red", ... }   ← t
 ### GF.2 — Layer order and alignment
 
 **Look up:** painter's algorithm (draw back to front); canvas `drawImage` and how later draws cover earlier ones; and why layers need a shared size or a shared anchor point to line up.
+
+**Do:** on paper, list your figure's layers back to front and mark every pair that could ever overlap.
 
 ### GF.3 — Color as data
 
