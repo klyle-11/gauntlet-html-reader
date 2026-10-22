@@ -97,3 +97,24 @@ I wouldn't pad the shorter sections beyond this. Their run-and-observe steps are
 ---
 
 *All of these checks ran against the parsed sources, so they can be re-run after edits. A doc-lint step that fails the build on a broken "M_'s Nth decision" or "M_'s Ground Floor" reference would be a small addition.*
+
+---
+
+## 5. Volumes IV, V, and VI
+
+After this review, Ground Floors were written for the remaining 43 modules: IV-M60–M71, the Reading Room's RR01–RR13, and VI-M60–M77. They follow the same template, with each volume's own ending: IV has no Briefing, so its Ground Floors close with "Then read the rest of the module below"; the Reading Room's sit beneath the guide sections each Briefing names and use a throwaway seed-library project; VI's close by pointing at that volume's Boundary Map and Budget Sheet.
+
+The same checks were run on them:
+
+| Check | Result |
+|---|---|
+| One Ground Floor per module, directly after the Story (first in IV-M70, which has no Story) | 102 / 102, enforced by `npm test` |
+| Template steps, 5 check-yourself questions, observe step right before the hand-off | 43 / 43 |
+| "That's M_'s Nth decision / trap" points at the right item | All of them (IV and VI number their lists; the Reading Room's prose decision maps are named instead) |
+| "M_'s Ground Floor covered X" is true | All, after fixing two overreaches found while checking (RR08 on radios, VI-M76 on reading SD files) |
+| Steps that only say "look up" | 0 |
+| Code that solves anything | 0 (VI-M60's opening diagram names `len()`, `length`, and `len(s)` side by side) |
+| A research target's done-when or a hint ladder's answer done in advance | Avoided by design; where a step touches a research topic it stops at names and says the module covers the rest |
+
+Lengths run 505–976 words. M70 and M71 are the lightest, like III's design modules, because they're about assembling and saying, not building.
+

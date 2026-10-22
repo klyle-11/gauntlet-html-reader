@@ -50,13 +50,17 @@ test('every volume I/II/III/VI module has the core sections', () => {
   }
 });
 
-test('every I/II/III module has a Ground Floor, right before its Briefing', () => {
+test('every module has exactly one Ground Floor, right after its Story', () => {
   for (const m of corpus.modules.values()) {
-    if (!['I', 'II', 'III'].includes(m.volume)) continue;
     const order = m.sections.map((s) => s.canonical);
+    assert.equal(order.filter((c) => c === 'groundfloor').length, 1, `${m.key} needs exactly one Ground Floor`);
     const gf = order.indexOf('groundfloor');
-    assert.ok(gf >= 0, `${m.key} has no Ground Floor`);
-    assert.equal(order[gf + 1], 'briefing', `${m.key}: Ground Floor is not followed by the Briefing`);
+    const story = order.indexOf('story');
+    // IV-M70 (the capstone) has no Story, so its Ground Floor opens the module.
+    if (story >= 0) assert.equal(gf, story + 1, `${m.key}: Ground Floor doesn't follow the Story`);
+    else assert.equal(order.slice(0, gf).filter((c) => c !== 'lead').length, 0, `${m.key}: Ground Floor isn't first`);
+    // Every volume except IV has a Briefing, and the Ground Floor leads into it.
+    if (m.volume !== 'IV') assert.equal(order[gf + 1], 'briefing', `${m.key}: Ground Floor isn't followed by the Briefing`);
   }
 });
 

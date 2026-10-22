@@ -1113,7 +1113,7 @@ The Gauntlet IDs are preserved where possible. RR02 now covers catalog identity;
 
 ## 33. The Reading Room Gauntlet — how to use these modules
 
-These modules follow the eleven-part pattern in your Gauntlet III: **Story, Briefing, Trap, Feature, Decision map, Research targets, Fence, Measure ritual, Hint ladder, Slow walk, and Prove it.** They belong inside this build guide so you can read an explanation and immediately attempt the corresponding work.
+These modules follow the twelve-part pattern in your Gauntlet III: **Story, Ground Floor, Briefing, Trap, Feature, Decision map, Research targets, Fence, Measure ritual, Hint ladder, Slow walk, and Prove it.** Each Ground Floor sits beneath the guide sections its Briefing names: it builds the pieces those sections take for granted, on a throwaway seed-library project, before you start the module. They belong inside this build guide so you can read an explanation and immediately attempt the corresponding work.
 
 The identifiers use `RR01` onward instead of continuing the other volumes' global numbering. That lets this project grow independently without colliding with future modules. Size estimates describe relative scope, not a deadline. A protected block means a focused work session whose end you decide in advance.
 
@@ -1132,6 +1132,89 @@ RR07–RR08 form the embedded/radio branch after local-first exchange works. RR0
 ### Story
 
 Someone in your reading group has only a phone. You want them to open one catalog item from your laptop, leave a note, and find that note again after you restart the server. The story is deliberately small enough that you can follow every byte of meaningful state.
+
+### Ground Floor — A process, a port, and a file
+
+*Read this before the Briefing. Section 4 walks you through RR01's real files; this goes one floor lower, to what section 4 takes for granted: what a running process is, what HTTP actually sends, and what it means for bytes to be on disk. It assumes you can write JavaScript, but not that you've run a server you wrote or watched its traffic. You'll build a throwaway seed-library counter first. This tells you what each piece is for and what to look up, never how to write it. The item, the form, validation, the storage contract, and the phone are RR01's.*
+
+#### GF.1 — The picture first
+
+```
+browser ──HTTP request: method, path, headers, body──▶ a PORT on one network INTERFACE
+                                                          │
+                                         a Node PROCESS (Express: route ─▶ handler)
+                                           │                      │
+                                  variables in memory      node:fs ─▶ data/ file on disk
+                                  (gone when it exits)              (still there tomorrow)
+◀──────────── HTTP response: status, headers, body ───────
+```
+
+Two places a note can live. Only one of them survives a restart.
+
+#### GF.2 — HTTP with no browser
+
+**Look up:** the shape of an HTTP request and response (request line, headers, blank line, body); `curl -v`; and `nc` (netcat) as a raw TCP client.
+
+**Do:** type a GET request for `http://example.com/` by hand into `nc`, then make the same request with `curl -v`. Read every line of both.
+
+#### GF.3 — Node as a process
+
+**Look up:** running a file with `node`; process lifetime; `process.cwd()` vs the script's own directory (`import.meta.dirname`); environment variables; and what Ctrl-C sends.
+
+**Do:** write a script that prints both directories, and run it from two different folders.
+
+**Question to settle:** if a program writes to `data/notes.jsonl`, where does the file land in each case?
+
+#### GF.4 — Files: append, read, and when it's really written
+
+**Look up:** `appendFile` and `readFile` in `node:fs/promises`; the JSON Lines format; and what awaiting a write does and doesn't promise (the operating system's cache, and `fsync`, as a name).
+
+**Build:** a script that appends one line like `{"seed":"tomato","at":"…"}` each time it runs, then prints every line. Run it five times.
+
+#### GF.5 — The smallest server
+
+**Look up:** Express's `app.get` and `app.listen` (port and host); `req.query`, `res.send`, and `res.redirect`; and section 4's note on running TypeScript with `node` vs checking it with `tsc --noEmit`.
+
+**Build:** a throwaway seed counter. `GET /` shows how many seed packets are logged in the file. `GET /add?seed=bean` appends a line and redirects back to `/`. Yes, a GET that changes data; you'll see why that's wrong.
+
+#### GF.6 — Addresses
+
+**Look up:** `127.0.0.1` vs `0.0.0.0` vs your laptop's LAN address; `ip addr` or `ipconfig`; your operating system's firewall; and, on WSL2, its NAT networking and mirrored mode.
+
+**Do:** bind the counter to `127.0.0.1` and try to reach it from your phone. Then bind to all interfaces and try again.
+
+#### GF.7 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Keep the count in a variable instead of the file,** add a few seeds, and restart the server. That's RR01's trap.
+2. **Start the server from a different folder.** Where did the file go? That's RR01's data-directory decision.
+3. **Run two `curl` loops that add seeds at the same time.** Count the lines. Is any line garbled? That's the decision about coordinating simultaneous writes.
+4. **Make the data folder read-only and add a seed.** What did the browser see? That's the write-failure decision.
+5. **Add a seed name 100,000 characters long.** What happened? That's the body-length decision, and the invalid-note one.
+6. **Refresh the page right after an add.** Did it add again?
+
+#### GF.8 — Hand-off: what's yours in RR01
+
+| Ground Floor left this… | RR01 asks you to… |
+|---|---|
+| A seed counter | One catalog item with an open/download link and its whole-item discussion |
+| `GET /add` changing data | A form POST that's validated, persisted, and redirected |
+| A file wherever the working directory pointed | Decide where the data directory resolves |
+| A read-only folder that failed somehow | Decide what the handler does when writing fails |
+| Lines from two loops at once | Explain your process model and write coordination |
+| A 100,000-character seed | A bounded body length, and how an invalid note is reported |
+| Your phone reaching the laptop | The same discussion from the phone, surviving a full restart |
+
+Then read the Briefing below.
+
+#### GF.9 — Check yourself before moving on
+
+- What are the parts of an HTTP request, and where does a form's data travel?
+- What's the difference between a process's working directory and its script's directory?
+- What does awaiting `appendFile` promise, and what doesn't it?
+- What does binding to `0.0.0.0` mean, and what address does your phone type?
+- Why doesn't `node app.ts` running fine prove that `tsc --noEmit` passes?
 
 ### Briefing
 
@@ -1179,6 +1262,76 @@ Show the phone submission, the disk record, and the restored page after process 
 
 Your archive replaces a blurry scan with a better one. People have already discussed the old scan, and you want their conversation to remain attached to the continuing catalog item. Another entry happens to share the same title; its discussion must remain separate.
 
+### Ground Floor — Names, hashes, and generated IDs
+
+*Read this before the Briefing and sections 5 and 6. It assumes RR01, but not that you've hashed a file or validated JSON at run time. You'll give a throwaway seed library its varieties, photos, and notes first. This tells you what each piece is for and what to look up, never how to write it. Item and comment IDs, the collection boundary, versions vs locators, reply parents, and missing assets are RR02's.*
+
+#### GF.1 — The picture first
+
+```
+"Cherokee Purple tomato"     a TITLE       for people; can change, can collide
+item:7f3c…                   an ITEM ID    generated once; means "this entry", forever
+sha256:ab12…                 a FILE HASH   means "exactly these bytes", nothing more
+https://…/tomato.jpg         a LOCATOR     says where to look today; promises nothing
+
+note ─target─▶ ?   which of the four should it point at?
+```
+
+#### GF.2 — Generating IDs
+
+**Look up:** `crypto.randomUUID()`; UUID versions 4 and 7, as names; collision probability, as a concept; and why counters reset after a reinstall.
+
+**Do:** generate a thousand IDs and confirm none repeat. Then write one sentence on what would happen to a counter-based ID if the seed library were restored from a backup.
+
+#### GF.3 — Hashing bytes
+
+**Look up:** SHA-256 with `createHash` from `node:crypto`; hashing a file as a stream; and hex encoding.
+
+**Do:** hash a photo. Copy it under another name and hash again. Open it in an image editor, save it without changing anything visible, and hash a third time.
+
+#### GF.4 — JSON from outside is untrusted
+
+**Look up:** why TypeScript types vanish at run time (section 4 again); `unknown` vs `any`; hand-written type guards; and runtime schema libraries (zod, valibot), as names.
+
+**Do:** write a type for a seed variety and a hand-written guard. Feed it one record missing a field and one with a number where a string belongs.
+
+#### GF.5 — References between records
+
+**Look up:** foreign keys, as a concept (M2's Ground Floor); references between JSON documents; and dangling references.
+
+**Build:** `varieties.json` with two varieties that happen to share a title, and `notes.jsonl` where each note names a variety by ID. Write a script that prints the notes grouped under each variety's title.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Your grouped print.** Did the two same-titled varieties' notes end up together? That's RR02's trap.
+2. **Rename one variety's title.** Do its notes still find it?
+3. **The photo you re-saved.** Same picture, different hash. Is that a new version? That's RR02's decision about version hashes and locators.
+4. **Add a reply note whose parent ID doesn't exist.** What did your script do? That's the decision about reply parents.
+5. **Delete one photo file.** What would a reader of that variety see? That's the decision about showing metadata without asset bytes.
+
+#### GF.7 — Hand-off: what's yours in RR02
+
+| Ground Floor left this… | RR02 asks you to… |
+|---|---|
+| Seed varieties with photos | Catalog items with file versions, and comments that survive renames |
+| IDs generated in a loop | Choose generated item and comment IDs |
+| A hash that changed on re-save | Distinguish a version hash from an external locator |
+| Notes grouped however you grouped them | Comments targeting the item, inside a collection boundary |
+| A reply to a parent that wasn't there | Decide how a reply names its parent, and what happens when it's absent |
+| A deleted photo | Decide what the interface shows when metadata exists and bytes don't |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What does a content hash identify, and what doesn't it?
+- Why isn't a title an identity?
+- What does a TypeScript type check at run time?
+- What happened to the hash when you renamed the file? When you re-saved it?
+- What's a dangling reference?
+
 ### Briefing
 
 Prerequisite: RR01. Read sections 5 and 6. A catalog item is a continuing thing you describe, while a content hash identifies one exact file. Comments target the item by default. Optional version references make a contribution specific to one file when that matters.
@@ -1224,6 +1377,82 @@ Show two isolated discussions, a surviving rename, a reply, and an unavailable a
 ### Story
 
 You and another reader make notes while disconnected. Neither person's work should disappear because the other reconnects later or a message is delivered twice.
+
+### Ground Floor — Sets, equality, and order
+
+*Read this before the Briefing and sections 7 and 8. It assumes RR02, but not that you've thought about what JavaScript considers "the same" object, or about sorting the same way on every machine. You'll compare two throwaway files of seed-swap records first. This tells you what each piece is for and what to look up, never how to write it. Operation identity, payload equality, validation, output order, unknown kinds, and conflict policy are RR03's.*
+
+#### GF.1 — The picture first
+
+```
+notebook A: {s1, s2}        notebook B: {s1, s3}
+             └──────── combine ───────┘
+                          │
+                MEMBERSHIP:  which records exist      (a set question)
+                          │
+                ORDER:       how to list them         (a separate, deterministic rule)
+```
+
+Two questions. Keep them apart from the start.
+
+#### GF.2 — What JavaScript calls "the same"
+
+**Look up:** `Set` and `Map`; SameValueZero equality; and why objects compare by reference.
+
+**Do:** put two objects with identical fields into a `Set` and print its size.
+
+#### GF.3 — Structural equality
+
+**Look up:** deep equality; key order in objects; what `JSON.stringify` does with key order; and canonical JSON (RFC 8785), as a name.
+
+**Do:** stringify two objects with the same fields in different orders and compare the strings.
+
+#### GF.4 — Algebra, on numbers first
+
+**Look up:** idempotence, commutativity, and associativity, with arithmetic and set examples.
+
+**Do:** for `max`, `+`, `-`, and string concatenation, mark which of the three properties each has. Leave notes out of it; RR03's research target is where you prove them with your own three-note example.
+
+#### GF.5 — Sorting the same everywhere
+
+**Look up:** `Array.prototype.sort` and its stability; comparing strings with `<` (UTF-16 code units) vs `localeCompare` and `Intl.Collator`; and why locale-aware order can differ between machines.
+
+**Do:** sort a list of mixed-case and accented IDs both ways and compare.
+
+#### GF.6 — Two files, ids only
+
+**Build:** a throwaway script that reads two JSON Lines files of seed-swap records, each with an `id`, and prints every id present in either file, sorted. Only ids; ignore everything else in each record.
+
+#### GF.7 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Give the same id two different seed names in the two files.** Your script printed the id once. Which name "won", and how would you know? That's RR03's trap.
+2. **Your concatenation row from GF.4.** Is "append file B to file A" commutative?
+3. **Your two sorts.** Would two machines in different locales agree? That's RR03's output-order decision.
+4. **Add a record with `"kind": "seed.trade"`, a kind your script has never seen.** What should happen to it? That's the unknown-kind decision.
+5. **Picture two people editing the same note while offline.** Neither edit is a duplicate. Don't solve it. That's the conflict-policy decision.
+
+#### GF.8 — Hand-off: what's yours in RR03
+
+| Ground Floor left this… | RR03 asks you to… |
+|---|---|
+| Two files of seed-swap ids | Merge for two local operation files, with fixtures |
+| Ids compared, payloads ignored | Payload-equality rules, and a visible conflict for one id with two payloads |
+| Algebra on numbers | The three properties, shown with your own three-note example |
+| Two sorts compared | A deterministic output order |
+| A kind nobody knew | Decide what happens to unknown operation kinds |
+| Two offline edits, imagined | Additions first, then a visible policy for concurrent revisions |
+
+Then read the Briefing below.
+
+#### GF.9 — Check yourself before moving on
+
+- Why does a `Set` hold two objects with identical fields?
+- Does `JSON.stringify` always give the same string for the same data? When doesn't it?
+- Which of `max`, `+`, and concatenation is commutative?
+- What's the difference between comparing by code unit and by locale?
+- Membership and order: which one does a merge decide, and which one does a view?
 
 ### Briefing
 
@@ -1271,6 +1500,79 @@ Demonstrate the three algebraic properties for valid inputs, a harmless repeated
 
 A visitor downloads the discussion, leaves the venue, closes their browser, and later adds notes without any reachable node. They need confidence that the work is on their device and a way to export it.
 
+### Ground Floor — The browser's own database, and its own server
+
+*Read this before the Briefing and sections 9 through 11. It assumes RR01–RR03, but not that you've used IndexedDB, written a service worker, or downloaded a file the page generated. You'll make a throwaway seed list that saves in the browser and opens offline first. This tells you what each piece is for and what to look up, never how to write it. What lives where, the saved states, origin changes, export and merge-based import, and recovery are RR05's.*
+
+#### GF.1 — The picture first
+
+```
+ORIGIN = scheme + host + port          e.g. http://localhost:5000
+ ┌───────────────────────────────────────────────────────────┐
+ │ the page                                                   │
+ │   IndexedDB       your data: records, indexes, transactions │
+ │   Cache Storage   saved responses: HTML, JS, CSS            │
+ │   SERVICE WORKER  sits between the page and the network     │
+ └───────────────────────────────────────────────────────────┘
+change any part of the origin ─▶ a different box, with nothing in it
+```
+
+#### GF.2 — Origins
+
+**Look up:** what an origin is; the same-origin policy; secure contexts; and why `localhost` counts as one.
+
+**Do:** open your RR01 app at `http://127.0.0.1:5000` and at `http://localhost:5000`. Store a value in `localStorage` in one and look for it in the other.
+
+#### GF.3 — IndexedDB, briefly
+
+**Look up:** opening a database; versions and `onupgradeneeded`; object stores and key paths; transactions and their `complete` event, as names; and the small `idb` wrapper library.
+
+**Build:** a throwaway page that saves seed names to IndexedDB and lists them after a reload.
+
+#### GF.4 — A service worker, from zero
+
+**Look up:** the service worker lifecycle (register, install, activate, fetch); scope; the Cache Storage API; and DevTools' Application tab, including "Offline" and "Update on reload".
+
+**Build:** a service worker that caches the page and its script on install and answers from the cache when the network is gone.
+
+#### GF.5 — Files out, files in
+
+**Look up:** creating a download from a `Blob` with `URL.createObjectURL`; `<input type="file">`; and `File.text()`.
+
+**Build:** export the seed list to a JSON file and import it back.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Find the line in your code where you decided a seed was saved.** Was the save actually finished there? That's RR05's trap, and its decision about what the interface says after a local save.
+2. **Go offline with the tab still open, then close it and reopen it offline.** Did it come back? That's the other half of the trap.
+3. **Your two origins.** Same seeds? That's RR05's decision about a change of origin.
+4. **Import your export twice.** How many seeds now? RR05 asks for a merge-based import.
+5. **Change your service worker and reload.** Which version is running?
+6. **Picture the server gone for good.** Where would your seeds come from on a new phone? That's the recovery decision.
+
+#### GF.7 — Hand-off: what's yours in RR05
+
+| Ground Floor left this… | RR05 asks you to… |
+|---|---|
+| Seeds in IndexedDB | Local writes authoritative for the client, with a pending-delivery record in the same transaction |
+| A cached page | The app and one item discussion cached, with explicit readiness |
+| "Saved" decided somewhere | Decide what the interface shows after local success, remote success, local failure, and an incomplete download |
+| Two origins, two databases | Decide how a change of origin is handled |
+| An import that replaced or duplicated | A notes-only export and a merge-based import |
+| A laptop and localhost | Recovery without the original server, then your target phone |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What three parts make an origin?
+- What's a service worker's scope?
+- Which event tells you an IndexedDB transaction has finished?
+- What did your page do when reopened offline?
+- Why might your updated service worker not have run right away?
+
 ### Briefing
 
 Prerequisite: RR03. Read sections 9 through 11. This module introduces two independent responsibilities: locally committing data and reopening the application resources. The first belongs to the browser database; the second requires an offline application and content strategy.
@@ -1316,6 +1618,74 @@ Perform Demonstration B with a real close-and-reopen sequence, then export and i
 ### Story
 
 A phone sends a note, the node saves it, and the acknowledgment is lost. You want retry to be ordinary behavior rather than a source of duplicate notes or missing work.
+
+### Ground Floor — Requests that fail in the middle
+
+*Read this before the Briefing and sections 12 and 14. It assumes RR05, but not that you've made a request fail on purpose at each stage, or deployed to a small Linux machine. You'll build a throwaway seed server that's slow to answer, and a client that gives up and tries again, first. This tells you what each piece is for and what to look up, never how to write it. Batches, per-operation errors, retries, checkpoints, partial acceptance, and cursors are RR06's.*
+
+#### GF.1 — The picture first
+
+```
+client ──send──▶ server: receive ─▶ validate ─▶ PERSIST ─▶ respond ──▶ client: receive
+          ⚡                ⚡           ⚡          ⚡          ⚡              ⚡
+each ⚡ is a place it can stop. After each one, what does the CLIENT know?
+```
+
+#### GF.2 — Idempotency in HTTP
+
+**Look up:** safe and idempotent HTTP methods (M13's Ground Floor touched this); idempotency keys (Stripe's write-up is a classic); and why "exactly-once delivery" is a promise networks don't make.
+
+**Do:** write one sentence per HTTP method on whether repeating it changes anything.
+
+#### GF.3 — Failing on purpose
+
+**Look up:** request timeouts with `AbortSignal.timeout` (M5's Ground Floor met `AbortController`); `curl --max-time`; and fault-injecting proxies such as toxiproxy, as names.
+
+**Build:** a seed server whose `POST /seeds` appends a seed, then waits three seconds before answering, and a client that gives up after one second and tries again.
+
+#### GF.4 — Batches
+
+**Look up:** batch endpoints with a result per item; HTTP 207 Multi-Status, as a name; and Express body-size limits.
+
+**Do:** send a batch of three seeds where one is invalid. Read what came back.
+
+#### GF.5 — A Raspberry Pi, as a target
+
+**Look up:** Raspberry Pi OS Lite; SSH; Node on arm64; a systemd service with `Restart=`; and where your data directory should live on the Pi.
+
+**Do:** if you have a Pi, run the throwaway there. If you don't, write down the steps you'd take.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Your client that retried.** How many seeds does the server have now? That's RR06's story.
+2. **Where did the client forget a seed it meant to send:** when it sent it, or when it heard back? That's RR06's trap.
+3. **Your three-seed batch with one bad seed.** All or nothing, or partial? How did the client find out which one failed? That's the partial-batch decision.
+4. **Ask the server "what's the highest seed number you have?"** Then delete seed 2 from its file and ask again. Does the answer show the hole? That's the second trap.
+5. **Kill the server during its three-second wait.** Is the seed on disk? What does the client believe?
+6. **Picture two Pis and one phone, each remembering "where I got up to" with the others.** Whose "where" is it? That's the checkpoint and cursor decision.
+
+#### GF.7 — Hand-off: what's yours in RR06
+
+| Ground Floor left this… | RR06 asks you to… |
+|---|---|
+| A POST that duplicated on retry | Bounded push and pull where repeating an operation is safe |
+| Pending work forgotten somewhere | Pending work cleared only when accepted persistence is acknowledged |
+| A batch that failed some way | Batch limits, per-operation errors, retry behavior, and a partial-batch policy |
+| "Highest number" as progress | Exchange missing IDs; bind any cursor to its node and log generation |
+| A kill mid-request | Name the exact persistence boundary before acknowledgment |
+| A Pi you may or may not have | The same app on a Pi, only after the protocol works on the laptop |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- Which HTTP methods are idempotent by definition?
+- After a timeout, what does the client know about the server's state?
+- What's an idempotency key?
+- What did your partial batch report?
+- How can a highest sequence number hide a gap?
 
 ### Briefing
 
@@ -1363,6 +1733,79 @@ Show interruption, retry, and convergence. Then turn off internet while leaving 
 
 Your group builds a guide to local oral histories. One person adds an interview resource to the Interviews section. Another adds a contextual post while disconnected. When they synchronize, both contributions appear without asking either person to merge prose with the other.
 
+### Ground Floor — Containers, contributions, and clocks that disagree
+
+*Read this before the Briefing and section 13. It assumes RR01–RR06, but not that you've rebuilt a tree from flat records, or noticed that two devices' clocks can't agree on "first." You'll build a throwaway seed-library guide first: one page, two sections, a few posts. This tells you what each piece is for and what to look up, never how to write it. Target types, who creates what, the order key, corrections, and reply display are RR04's.*
+
+#### GF.1 — The picture first
+
+```
+page "Seed Library Guide"
+ ├─ section "Tomatoes"
+ │    ├─ post ─ reply
+ │    └─ post
+ └─ section "Beans"
+      └─ post
+
+stored as FLAT records:  each child names its parent
+displayed as a TREE:     rebuilt from those names, in an order you define
+```
+
+#### GF.2 — Trees from flat records
+
+**Look up:** the adjacency list model (M11's Ground Floor) applied to JSON records; grouping by parent ID; and escaping user text before display (M26's Ground Floor).
+
+**Build:** the guide above as a JSON Lines file, rendered as nested HTML.
+
+#### GF.3 — Clocks
+
+**Look up:** wall-clock time and NTP; clock skew between devices; why `Date.now()` on two devices can't order their events; and Lamport clocks, as a name. RR04's research target is where you learn their rule.
+
+**Do:** add a post from two "devices" (two scripts), one of which adds ten minutes to every timestamp it writes. Sort all posts by timestamp.
+
+#### GF.4 — Comparing strings across platforms
+
+**Look up:** RR03's Ground Floor on code units vs `localeCompare`; `Intl.Collator`; and restricting identifiers to ASCII.
+
+**Do:** sort the same list of post IDs in Node and in your phone's browser using `localeCompare`. Same order?
+
+#### GF.5 — Adding through a form
+
+**Build:** a form that adds a plain-text post to a chosen section of the throwaway guide.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Your skewed-clock sort.** Which post came first, and was it really first? That's RR04's decision about the order key and comparison rule.
+2. **Have both scripts append posts, then concatenate their files in both orders.** Same page both times? That's RR04's second trap.
+3. **Find a typo in a post.** What did you reach for: editing the record in place? That's the corrections decision.
+4. **Your reply.** Did you nest it under its post, or show it in the section's list? That's the reply-display decision.
+5. **Picture the "Tomatoes" introduction as one long editable text field.** How would two offline edits to it combine? That's RR04's first trap.
+6. **Who should be allowed to create a section?** That's the decision about what stays curator-controlled.
+
+#### GF.7 — Hand-off: what's yours in RR04
+
+| Ground Floor left this… | RR04 asks you to… |
+|---|---|
+| A seed guide in one flat file | One page with two sections, posts, resource cards, and replies |
+| Parent references, informally | Page, section, post, and reply target types |
+| Anyone could add anything | Decide what contributors create and what stays curator-controlled |
+| Timestamps that lied | An immutable order key and a cross-platform comparison rule |
+| A typo fixed in place | Follow-up corrections instead of in-place edits |
+| A reply placed somewhere | Decide nested replies vs the section feed with a parent link |
+| One editable intro, imagined | Independent posts only; no shared prose field |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- How do you rebuild a tree from flat records that name their parents?
+- Why can't two devices' wall clocks order their events?
+- Did `localeCompare` give the same order on your laptop and your phone?
+- In your guide, what's the difference between membership and display order?
+- How did you make sure a post's text displayed as text?
+
 ### Briefing
 
 Prerequisites: RR05 and RR06, after RR01–RR03. Read section 13. This module is scheduled after local-first discussion exchange even though its retained number is RR04. Pages and sections are containers; posts are independent contributions. The wiki reuses the suite's delivery foundation but introduces new target relationships.
@@ -1408,6 +1851,70 @@ Show two independent resource posts and a reply surviving offline exchange, with
 ### Story
 
 A courier delivers a post referencing a section your phone has never seen. Later, another exchange delivers that section and its page. The post should become readable in its correct place without being lost, duplicated, or assigned to the wrong guide.
+
+### Ground Floor — Things that arrive in the wrong order
+
+*Read this before the Briefing and sections 11, 12, and 13. It assumes RR04, but not that you've held records whose meaning depends on records you don't have yet. You'll build a throwaway "pending shelf" for seed records whose variety hasn't arrived first. This tells you what each piece is for and what to look up, never how to write it. Which checks wait, the kinds of "no," limits, and the collection boundary are RR13's.*
+
+#### GF.1 — The picture first
+
+```
+arrives:   post (names section S)   ...   section S (names page P)   ...   page P
+
+state:     RECEIVED ─▶ PENDING (a parent is missing) ─▶ RESOLVED (the whole chain is known) ─▶ VISIBLE
+                         │
+                 bounded: how many, how long?
+```
+
+#### GF.2 — Dependency graphs
+
+**Look up:** dependency graphs; topological order; cycles; and why a cycle has no topological order.
+
+**Do:** run `npm ls` in any Node project and draw the dependency graph of three packages by hand. Mark one order you could install them in. RR13's research target is where you trace a wiki chain the same way.
+
+#### GF.3 — Buffers that can't grow forever
+
+**Look up:** bounded queues; eviction policies (oldest first, size caps, time limits); and backpressure (M36's Ground Floor).
+
+**Build:** a throwaway pending shelf. Seed records that name a variety you don't know yet go on a shelf with a fixed capacity. When the variety arrives, its records move to the main list.
+
+#### GF.4 — Kinds of "no"
+
+**Look up:** HTTP 400, 403, 404, 409, and 422, and what each tells a client; and the difference between "not yet" and "never."
+
+**Do:** list four reasons a received record might not be shown, and mark which of them could change later.
+
+#### GF.5 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Feed your shelf records for a variety that never arrives, until it's full, then one more.** What got dropped? That's RR13's decision about limits on unresolved records.
+2. **Feed it a record whose variety belongs to someone else's seed library.** Did it resolve when that variety appeared? That's the collection-boundary decision.
+3. **Make variety A's parent B and B's parent A.** What happened? That's the cycle rule.
+4. **Feed the same pending record twice.**
+5. **Your four kinds of "no."** Which ones did your throwaway tell apart? That's RR13's decision about missing, unauthorized, malformed, and hidden objects, and its first trap.
+
+#### GF.6 — Hand-off: what's yours in RR13
+
+| Ground Floor left this… | RR13 asks you to… |
+|---|---|
+| A pending shelf for seeds | A bounded pending area for wiki objects with missing parents |
+| Package graphs drawn by hand | One wiki chain traced on paper, with reverse delivery predicted |
+| A capacity you picked | Limits on unresolved records and on request retries |
+| A variety from another library | Parent chains that stay inside the authorized collection |
+| A two-record loop | Reject cycles and incorrect target types |
+| Four kinds of "no," partly told apart | Distinguish missing, unauthorized, malformed, and hidden |
+| One way in | The same final wiki through file import and through HTTP |
+
+Then read the Briefing below.
+
+#### GF.7 — Check yourself before moving on
+
+- What's a topological order, and why can't a cycle have one?
+- What did your shelf do when it was full?
+- Which HTTP status, if any, means "not yet"?
+- What did your throwaway do with a record from another library?
+- How did a pending record become visible?
 
 ### Briefing
 
@@ -1455,6 +1962,79 @@ Deliver the chain backward through a file package and through HTTP, and obtain t
 
 A pocket device carries a note between places where phones or nodes cannot meet. Its first responsibility is preserving and returning one small object, not rendering a whole library.
 
+### Ground Floor — Bytes over a wire, bytes on a card
+
+*Read this before the Briefing and section 15. It assumes M32's Ground Floor, so you've flashed an ESP32, printed over serial, and listed an SD card's files, but not that you've sent structured data over serial or watched a write get cut off. You'll echo bytes and break an SD write on purpose first. This tells you what each piece is for and what to look up, never how to write it. The board decision, framing, sizes, storage ownership, tail recovery, and what a receipt promises are RR07's.*
+
+#### GF.1 — The picture first
+
+```
+laptop ──USB──▶ [ a USB-to-serial bridge chip?  or the S3's own USB? ] ──▶ the board's serial port
+                                                                              │
+                                   a byte stream, with NO message boundaries ─┘
+                                                                              ▼
+                                       find where a message ends ─▶ check it ─▶ append to SD
+                                                                              │
+                                     "got it" ◀── when, exactly? bytes in RAM? bytes on the card?
+```
+
+#### GF.2 — Which board, exactly
+
+**Look up:** how to find a board's exact model and revision; where its schematic lives; how to tell whether its USB connector goes through a bridge chip (CP2102, CH340) or to the ESP32-S3's native USB; and its boot and strapping pins.
+
+**Do:** for the board you have, save the schematic and mark the USB path on it.
+
+#### GF.3 — Serial is a stream
+
+**Look up:** UART and baud rate; the `serialport` package for Node or `pyserial` for Python on the laptop side; and `screen` or `minicom` as monitors.
+
+**Do:** send "hello" from the laptop and echo it back from the board. Then send 2,000 bytes in one go and log how many arrive in each read on the board.
+
+#### GF.4 — Framing, as a concept
+
+**Look up:** length-prefix framing; delimiter framing; SLIP and COBS, as names; and endianness.
+
+**Do:** on paper, frame three short messages with a length prefix and three with a newline delimiter. Mark what the receiver must keep between reads (M36's Ground Floor asked the same about chunks).
+
+#### GF.5 — Writes that can be cut short
+
+**Look up:** FAT on SD cards (M32's Ground Floor); flushing and syncing a file in your framework; write caching; torn writes; and CRC32, as a checksum.
+
+**Do:** append numbered lines to a file on the SD card in a loop. Pull the power at a random moment, then read the file on your laptop and look closely at the end.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Your 2,000-byte send.** How many reads did the board need? That's why RR07 asks you to decide framing.
+2. **The end of your power-cut file.** A complete line, half a line, or garbage? That's RR07's tail-recovery decision.
+3. **When did your echo board say "got it":** with the bytes in RAM, or on the card? That's the receipt decision.
+4. **On paper: a length prefix claims 2 GB.** What would your board try to do with it? That's the maximum-size decision.
+5. **If your board can appear as a USB drive, picture it doing so while the firmware writes to the card.** Who owns the files? That's the storage-ownership decision, and the second trap.
+6. **Count the parts you were tempted to wire up for this throwaway.** That's the first trap.
+
+#### GF.7 — Hand-off: what's yours in RR07
+
+| Ground Floor left this… | RR07 asks you to… |
+|---|---|
+| A board identified | The exact board revision, verified against its schematic |
+| Echoed bytes | A framed object received over serial, its declared size validated |
+| Frames on paper | A record framing and a maximum object size |
+| A torn tail on a card | Recovery that keeps every committed record readable |
+| An echo that said "got it" early | Decide what a receipt promises |
+| A card two things could write | Decide storage ownership |
+| One power cut | The same object returned after a reboot; duplicates don't grow the accepted set |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- Why does serial need framing when HTTP didn't seem to?
+- How does a length prefix tell the receiver where a message ends?
+- What did a power cut do to your last line?
+- What's the difference between a USB-to-serial bridge and the S3's native USB?
+- What should a receiver check before allocating memory for a message?
+
 ### Briefing
 
 Prerequisite: RR06. Read section 15. Firmware, storage, and transport are distinct layers. A microcontroller's limited memory makes bounded records and interrupted-write behavior important from the beginning.
@@ -1500,6 +2080,77 @@ Show the same object returning after reboot and a duplicate not growing the acce
 ### Story
 
 Two reading-room nodes are separated by a route you care about. You want a small note to reach the other end eventually, and you want to know what delivery actually costs.
+
+### Ground Floor — Bytes that might not arrive
+
+*Read this before the Briefing and section 16. It assumes RR07, and M33's or M54's Ground Floor, so you've run Reticulum or Meshtastic yourself, but not that you've counted airtime or measured delivery over a real route. You'll compute airtime, count bytes, and push messages through a fake unreliable link first. This tells you what each piece is for and what to look up, never how to write it. Who provides what, queues, receipts, regional settings, and the measured route are RR08's.*
+
+#### GF.1 — The picture first
+
+```
+one operation ─▶ serialized: N BYTES (not characters)
+      │
+      ▼  maybe split into pieces that fit one radio message
+radio ))) maybe a relay ))) the destination
+      │                        │
+"sent"? "relayed"?       reassembled? validated? COMMITTED?
+      └──────── which of these does a receipt actually mean? ────────┘
+```
+
+#### GF.2 — Radio, as physics
+
+**Look up:** LoRa spreading factor and bandwidth; airtime; duty-cycle limits; your region's band (for example, 915 MHz in the US, 868 MHz in the EU) and its rules; and link budget and antenna height, as concepts.
+
+**Do:** use an online LoRa airtime calculator to find the airtime of a 50-byte and a 200-byte payload at two spreading factors.
+
+#### GF.3 — Bytes, not characters
+
+**Look up:** UTF-8 byte length (`TextEncoder` or `Buffer.byteLength`); JSON's overhead; and CBOR and MessagePack, as names.
+
+**Do:** measure one of your RR03 operations as JSON, in characters and in bytes. Add an emoji to its body and measure again.
+
+#### GF.4 — A link that misbehaves
+
+**Build:** a throwaway function that "delivers" messages with random drops, duplicates, and reordering. Send 100 numbered single-message records through it and count what arrives, and how often.
+
+#### GF.5 — What each system does for you, by name
+
+**Look up**, at the level of names only: which of addressing, encryption, acknowledgment, and fragmentation Meshtastic provides, and which Reticulum provides. The usable payload numbers are RR08's research target.
+
+**Do:** send a counter between your two radios with the official tools, and note what told you it was delivered.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Your airtime numbers.** Multiply by the number of radio messages one operation would need. How long is that?
+2. **Your emoji.** Characters vs bytes. That's RR08's second trap.
+3. **Your misbehaving link.** How many of the 100 arrived, and how many twice? What would "transmitted" have told you about either number? That's RR08's decision about relay and destination receipts.
+4. **Your counter between radios.** Who said "delivered": your radio, a relay, or the other end?
+5. **Carry one radio to the far end of the route you actually care about, not across your desk.** Did the counter arrive? That's RR08's first trap.
+6. **Check your radios' region setting.** Who sets that rule where you live? That's the regional-configuration decision.
+
+#### GF.7 — Hand-off: what's yours in RR08
+
+| Ground Floor left this… | RR08 asks you to… |
+|---|---|
+| Airtime, calculated | Measured bytes, attempts, latency, and failures on one real route |
+| An emoji counted twice | Count serialized bytes, never characters |
+| A misbehaving link for single messages | A fragmented operation surviving deliberate loss and reordering |
+| Names of what each system provides | Decide which pieces the system provides and which your adapter supplies |
+| "Delivered" from somewhere | Relay receipts distinguished from destination receipts; queue limits |
+| A region setting checked | Regional configuration verified before any transmission |
+| A bench test | A measured route, stated honestly, and only then the courier queue |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What does a higher spreading factor buy, and what does it cost?
+- How many bytes is your operation as JSON, and how many characters?
+- How many of your 100 messages arrived, and how many twice?
+- What did your counter test's "delivered" actually mean?
+- Which band does your region use, and who sets the rules for it?
 
 ### Briefing
 
@@ -1547,6 +2198,77 @@ Show a complete annotation surviving a dropped fragment and state the measured r
 
 A person walks to a virtual shelf, opens an item discussion or wiki page, and leaves a contribution. Another person uses a conventional list to reach exactly the same book and note. The room adds a meaningful interaction without becoming a separate database.
 
+### Ground Floor — Input is not the application
+
+*Read this before the Briefing and sections 17 and 21. It assumes the core comments and wiki campaign, and M46's Ground Floor on a canvas room, but not that you've designed keyboard focus deliberately or read a gamepad from a browser. You'll build a throwaway "seed shed" with three buttons first. This tells you what each piece is for and what to look up, never how to write it. Hotspot references, focus, movement, and hardware roles are RR09's.*
+
+#### GF.1 — The picture first
+
+```
+keyboard ─┐
+gamepad  ─┼─▶ INPUT LAYER ─▶ an ACTION ("open shelf", "next hotspot")
+touch    ─┘                        │
+                                   ▼
+                   the SAME function the list view calls ─▶ the same data
+                                   │
+                         shown as a ROOM, or as a LIST
+```
+
+The room is a way of arriving. It isn't a second place to keep things.
+
+#### GF.2 — Focus and the keyboard
+
+**Look up:** focus and focus order; `tabindex` (0 and -1); `:focus-visible`; focus traps, and how not to make one; and `aria-label`.
+
+**Do:** use any web app for five minutes with only the keyboard. Note every place focus vanished or got stuck.
+
+#### GF.3 — The Gamepad API
+
+**Look up:** `navigator.getGamepads()`; the "standard" mapping; polling inside `requestAnimationFrame` (M17's Ground Floor); and the `gamepadconnected` event.
+
+**Do:** plug a controller you already own into your laptop and log which button index each physical button produces.
+
+#### GF.4 — Hotspots as buttons
+
+**Build:** a throwaway seed shed: a picture (or a drawn rectangle) with three positioned `<button>`s labeled Tomatoes, Beans, and Squash. Each one shows a list of seeds. Make the keyboard work before anything else.
+
+#### GF.5 — Bluetooth roles, as vocabulary
+
+**Look up:** Classic Bluetooth (BR/EDR) vs BLE; HID; host vs device roles; and Bluepad32, as a name, and which chips it supports (section 17).
+
+**Do:** write down your controller's exact model and which kind of Bluetooth it uses.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Your shed's buttons.** Does each one hold a list of seeds, or a reference to where the seeds live? That's RR09's hotspot-reference decision.
+2. **Open a list, then press Escape.** Where did focus go? That's the focus decision.
+3. **Move between hotspots with the D-pad.** Directional, or next/previous? That's the movement decision.
+4. **Your controller's model and Bluetooth type.** Would it talk to an ESP32-S3? That's the hardware decision, and RR09's second trap.
+5. **Did you start on walking animation?** That's the first trap.
+
+#### GF.7 — Hand-off: what's yours in RR09
+
+| Ground Floor left this… | RR09 asks you to… |
+|---|---|
+| A seed shed with three buttons | One room with three hotspots mapped to existing actions |
+| Lists held or referenced | Hotspots that reference collections, never copies |
+| Focus wherever it went | Focus that behaves between room and reader |
+| D-pad button indices | Choose click-based or directional movement |
+| A controller model written down | Host and device roles and protocol verified before buying or modifying anything |
+| A list, somewhere | A list-based route to exactly the same content and annotations |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What do `tabindex="0"` and `tabindex="-1"` each do?
+- How does a page learn a gamepad button is pressed: events or polling?
+- What's the difference between Classic Bluetooth and BLE for controllers?
+- Where did focus go when you closed a list?
+- Why should keyboard, controller, and touch call the same action function?
+
 ### Briefing
 
 Prerequisite: the core comments and wiki campaign. Read sections 17 and 21. Separate input, application logic, and video output. The first spatial room can be single-user and entirely local. The same actions can be triggered by keyboard, controller, or touch.
@@ -1593,6 +2315,77 @@ Demonstrate the same content and annotation through spatial and conventional vie
 
 A venue wants participants to contribute text and images without immediately projecting every submission. You want an accountable review process that can work even when the AI helper is unavailable.
 
+### Ground Floor — States, roles, and a model that might not answer
+
+*Read this before the Briefing and sections 18 and 22. It assumes the core campaign, but not that you've modeled a review workflow, enforced who may change it, or evaluated a classifier. You'll build a throwaway seed-library notice board with a fake classifier first. This tells you what each piece is for and what to look up, never how to write it. Who submits and reviews, pending display, timeouts, decision scope, and version records are RR10's.*
+
+#### GF.1 — The picture first
+
+```
+submission ─▶ PENDING ─▶ (a model SUGGESTS, maybe) ─▶ a REVIEWER decides ─▶ display POLICY ─▶ the shared screen
+                                  │
+                       times out? down? ─▶ still pending, still reviewable
+
+ROLES:  contributor · reviewer · display     each allowed different transitions
+```
+
+#### GF.2 — A state machine again
+
+**Look up:** M13's Ground Floor on states, transitions, and guards.
+
+**Do:** draw the states a notice-board submission can be in, and write its transition table on paper.
+
+#### GF.3 — Roles and authority
+
+**Look up:** role-based access control; scopes; and why a field that says `"reviewer": "admin"` proves nothing by itself (section 22).
+
+**Do:** next to each transition in your table, write who should be able to cause it.
+
+#### GF.4 — Calling a model that might not answer
+
+**Look up:** request timeouts with `AbortSignal.timeout`; a mock HTTP endpoint that returns canned answers after a random delay; and one provider's moderation endpoint, as a name.
+
+**Build:** a notice board that sends each submission to your mock classifier with a two-second timeout and prints the suggestion.
+
+#### GF.5 — Evaluating a classifier
+
+**Look up:** false positives and false negatives; precision and recall; a confusion matrix; and why a score isn't a calibrated probability.
+
+**Do:** label 20 invented submissions yourself, including a few that need context. Run your mock (which guesses at random) over them and fill in a confusion matrix.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Stop the mock.** What does your board do with a new submission: show it, hold it, or crash? That's RR10's timeout decision.
+2. **Send an approval from a user your table never mentioned.** What happened? That's RR10's second trap.
+3. **Your confusion matrix.** On a screen in a venue, which mistake costs more?
+4. **What does "reject" do in your throwaway:** hide it on screen, delete it, stop it being forwarded? That's the decision-scope decision.
+5. **Change the mock's version string.** Could you tell, later, which version suggested what? That's the decision about recording policy and model versions.
+6. **Read your mock's score as a verdict.** That's RR10's first trap.
+
+#### GF.7 — Hand-off: what's yours in RR10
+
+| Ground Floor left this… | RR10 asks you to… |
+|---|---|
+| A transition table on paper | A pending queue and a human approval action, built first |
+| Roles beside each transition | Decide who submits, who reviews, and what shows while pending |
+| A mock that timed out | Decide what happens when the model times out; the workflow works without AI |
+| An approval from a stranger | Unauthorized moderation events rejected |
+| A matrix from a random mock | A small representative evaluation of a real model |
+| One meaning of "reject" | Decide whether a decision affects display, storage, forwarding, or all three |
+| A version string | Policy and model versions recorded separately |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What are your submission's states, and which transitions need a reviewer?
+- False positive vs false negative on a venue screen: which is which?
+- What did your board do when the model didn't answer?
+- Why isn't a field naming the reviewer enough to trust a decision?
+- What's the difference between a model's suggestion and a node's policy?
+
 ### Briefing
 
 Read sections 18 and 22. A submission, a model assessment, a moderator decision, and a display policy are four distinct objects or responsibilities. Keeping them separate makes mistakes recoverable and authority visible.
@@ -1638,6 +2431,87 @@ Show pending, approved, corrected, and AI-unavailable paths, plus a rejected una
 ### Story
 
 Your reading group replaces the sample paragraph with a real book. You need every participant to refer to the same edition and passage even when they use different screen sizes.
+
+### Ground Floor — A C++ command-line program, from the build up
+
+*Read this before the Briefing and sections 23 to 25. It assumes C from M18's Ground Floor and the C++ first hour from M36's, but not that you've built a C++ tool with libraries, resolved relative paths, or opened an archive from code. You'll build a throwaway file-hashing CLI and two small inspection tools first. This tells you what each piece is for and what to look up, never how to write the importer. Path resolution, parser behavior, supported blocks, normalization, and unsupported books are RR11's.*
+
+#### GF.1 — The picture first
+
+```
+BUILD:  CMakeLists.txt ─▶ CMake generates a build ─▶ compiler + linker ─▶ ./tool
+                           libraries: a package manager, or the system's
+
+RUN:    ./tool book.epub --output dir
+          ├─ read the original bytes (and keep them)
+          ├─ open the archive with a LIBRARY
+          ├─ read XML with a LIBRARY
+          ├─ write outputs
+          └─ write the manifest LAST
+```
+
+#### GF.2 — Building C++ properly
+
+**Look up:** CMake basics (`project`, `add_executable`, `target_link_libraries`, out-of-source builds); compiler warnings and `-fsanitize=address` (M18's Ground Floor); vcpkg or Conan, or your system's packages; and `std::filesystem`.
+
+**Build:** a throwaway CLI, `seedhash path/to/file`, that prints a file's size and SHA-256, using a library for the hash.
+
+#### GF.3 — Paths
+
+**Look up:** `std::filesystem::path`; `lexically_normal`; resolving one path relative to another; and percent-encoding in EPUB `href`s, as a concept.
+
+**Do:** resolve `../Images/a.png` relative to `OEBPS/Text/ch1.xhtml`, first by hand, then with `std::filesystem`.
+
+#### GF.4 — Archives with a library
+
+**Look up:** libzip or minizip-ng; listing entries; declared compressed and uncompressed sizes; and reading one entry.
+
+**Build:** a tool that lists every entry in an EPUB with its declared sizes.
+
+#### GF.5 — XML with a library
+
+**Look up:** pugixml or libxml2; namespaces; XPath, as a name; and the library's switches for DTDs and external entities.
+
+**Build:** a tool that prints the root element and namespace of any EPUB's `META-INF/container.xml`. Stop there; following it into the package document is RR11's research target.
+
+#### GF.6 — Output you can trust
+
+**Look up:** writing to a temporary file and renaming it; why rename is atomic on most filesystems; and exit codes for command-line tools.
+
+**Do:** make `seedhash` write its result through a temporary file and a rename. Add a sleep before the rename and kill it there.
+
+#### GF.7 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Your entry list.** Is the order of entries the reading order? Can you tell from the listing? That's RR11's first trap.
+2. **Resolve a path that climbs above the archive's root.** What did `lexically_normal` give you? That's RR11's relative-path decision.
+3. **Your XML library's defaults.** Are DTDs and external entities processed? That's the parser-behavior decision.
+4. **Hash two identical paragraphs.** That's RR11's second trap.
+5. **Your killed `seedhash`.** What was left on disk? That's why a manifest is written last.
+6. **Open a fixed-layout or protected EPUB's listing, if you have one legally.** What looks different? That's the decision about reporting unsupported books.
+
+#### GF.8 — Hand-off: what's yours in RR11
+
+| Ground Floor left this… | RR11 asks you to… |
+|---|---|
+| A CLI that hashes files | A C++ importer that preserves the original and hashes it |
+| Entries listed | Container, package, manifest, and spine resolved in reading order |
+| Paths resolved by hand | Decide how relative paths resolve, and reject escapes |
+| Library defaults, read | Decide which XML parser behavior is allowed |
+| Two identical paragraphs hashed | Stable block IDs, with a normalization version |
+| Temporary file, then rename | A manifest committed only after every output succeeds |
+| An unusual listing | Fixed-layout and protected publications reported, not mangled |
+
+Then read the Briefing below.
+
+#### GF.9 — Check yourself before moving on
+
+- What does CMake produce, and what actually compiles your code?
+- What does `lexically_normal` do with `a/b/../c`?
+- What did your archive library report as each entry's sizes?
+- Does your XML library process external entities by default?
+- Why rename a temporary file instead of writing the final file directly?
 
 ### Briefing
 
@@ -1686,6 +2560,82 @@ Open the book in the intended order, demonstrate two identical paragraphs with d
 This is later reader work, not part of the initial suite milestone.
 
 A reader highlights a phrase on a narrow phone, then opens the same book on a wide laptop. The highlight should identify the same words rather than the same pixels.
+
+### Ground Floor — Counting characters in a tree
+
+*Read this before the Briefing and sections 24 and 26. It assumes RR11, and M27's and M16's Ground Floors, so you've met text nodes, selections, and graphemes, but not that you've counted a string four ways or watched markup change the text nodes under a sentence. You'll take a throwaway paragraph apart first. This tells you what each piece is for and what to look up, never how to write it. Eligible nodes, whitespace, the offset unit, cross-block selections, the rendering technique, and unresolved notes are RR12's.*
+
+#### GF.1 — The picture first
+
+```
+<p>We <em>read</em> together. <button>Note</button></p>
+   └─ text ─┘└ element ┘└─ text ─┘ └── a CONTROL, not book text ──┘
+
+a browser SELECTION:   (node, offset) ─▶ (node, offset)
+your stored SELECTOR:  (block, start, end, quote, context)
+between them:          a mapping you write, in ONE unit, over ONE agreed text
+```
+
+#### GF.2 — How long is a string?
+
+**Look up:** UTF-16 code units, code points, and graphemes (M16's Ground Floor); UTF-8 bytes with `TextEncoder`; and `Array.from` on a string.
+
+**Do:** for `"café"`, `"café"`, and `"👍🏽"`, record all four counts.
+
+#### GF.3 — Unicode normalization
+
+**Look up:** NFC and NFD, and `String.prototype.normalize`.
+
+**Do:** compare the two cafés with `===`, then again after normalizing both. They look identical on screen.
+
+#### GF.4 — Walking text nodes
+
+**Look up:** `document.createTreeWalker` with `NodeFilter.SHOW_TEXT`; and `textContent` vs `innerText` (M53's Ground Floor).
+
+**Build:** a throwaway page with a paragraph containing an `<em>`, a `<button>`, and a hidden `<span>`. Walk it and print every text node.
+
+#### GF.5 — Whitespace
+
+**Look up:** CSS `white-space` collapsing; how line breaks in HTML source become text; and how `innerText` and `textContent` treat collapsed whitespace.
+
+**Do:** write a paragraph with line breaks and double spaces in its source. Compare `textContent`, `innerText`, and what you see on screen.
+
+#### GF.6 — Painting a range, by name
+
+**Look up:** the CSS Custom Highlight API (`CSS.highlights`, `::highlight()`) and wrapping text in `<mark>`, as two ways to show a highlight.
+
+**Do:** in DevTools, wrap one word of your paragraph in `<mark>`. Walk the text nodes again.
+
+#### GF.7 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Your four counts for "👍🏽".** Which one does a JavaScript string index use? That's RR12's offset-unit decision, and its second trap.
+2. **Your walk printed the button's label and the hidden text.** Which of those are book text? That's the eligible-nodes decision, and a trap.
+3. **Three different strings for one paragraph.** That's the whitespace decision.
+4. **After the `<mark>`, did the number of text nodes change?** That's the rendering-technique decision.
+5. **Select from the middle of one paragraph into the next.** What does the selection span? That's the cross-block decision.
+
+#### GF.8 — Hand-off: what's yours in RR12
+
+| Ground Floor left this… | RR12 asks you to… |
+|---|---|
+| Four counts for one emoji | One offset unit, recorded with every selector |
+| A walk over every text node | Defined eligible text nodes, excluding controls and labels |
+| Three strings for one paragraph | A whitespace convention |
+| A `<mark>` that split text nodes | A rendering technique that doesn't corrupt the coordinate model |
+| A selection across paragraphs | A defined response to cross-block selections |
+| Nothing stored yet | A selector with quote context, resolved after reload or shown as unresolved |
+
+Then read the Briefing below.
+
+#### GF.9 — Check yourself before moving on
+
+- How many UTF-16 code units is "👍🏽"? How many graphemes?
+- What's the difference between NFC and NFD?
+- What does a tree walker with `SHOW_TEXT` visit?
+- Which of `textContent` and `innerText` reflects CSS whitespace collapsing?
+- What did wrapping a word in `<mark>` do to the text nodes?
 
 ### Briefing
 

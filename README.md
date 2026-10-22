@@ -31,7 +31,7 @@ The volume number comes from build order, not from the filename or the title ins
 
 ## Goals
 
-1. **Parse**: split each volume into modules and each module into normalized sections (Story, Briefing, Trap, Feature, Decision map, Research, Fence, Measure, Hints, Slow walk, Prove it).
+1. **Parse**: split each volume into modules and each module into normalized sections (Story, Ground Floor, Briefing, Trap, Feature, Decision map, Research, Fence, Measure, Hints, Slow walk, Prove it).
 2. **Render**: produce one page per module, plus volume and stack indexes. Keep the prose faithful to the source.
 3. **Interact**, with everything saved locally:
    - a code editor per module, saved as real files on disk
