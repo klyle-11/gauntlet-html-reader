@@ -82,7 +82,9 @@ for (const [c, names] of ALIASES) for (const n of names) ALIAS_MAP.set(n, c);
 
 export function canonicalSection(heading: string): Canonical {
   const key = heading.toLowerCase().replace(/\s+/g, ' ').replace(/[–-]/g, '—').trim();
-  return ALIAS_MAP.get(key) ?? ALIAS_MAP.get(key.replace(/\s—\s/g, ' — ')) ?? 'extra';
+  // "Ground Floor — <subtitle>": the subtitle varies per module.
+  if (/^ground floor\b/.test(key)) return 'groundfloor';
+  return ALIAS_MAP.get(key) ?? 'extra';
 }
 
 const ANCHOR_LINE = /^\s*<a id="([^"]+)"><\/a>\s*$/;

@@ -156,19 +156,20 @@ This is the load-bearing wall. Read it once; every module below just invokes it.
 
 ## How every module is shaped
 
-Eleven parts, the same every time, so you always know where you are:
+Twelve parts, the same every time, so you always know where you are:
 
 1. **The story** — the module as a Jira-style ticket: the persona, the want, the why, an MVP, and acceptance criteria. It's the definition of done, stated before any theory.
-2. **Briefing** — the concept and why it matters, in half a page or less, starting from zero. Every term is defined at first use; the jargon is earned, not assumed (see _Voice_, below). Points you at the anchor book in this project where one covers the ground.
-3. **The trap** — the classic pitfall this feature walks straight into, named in two or three sentences, _without_ the resolution. You should recognize it when it bites.
-4. **The feature** — requirements and contract only. Acceptance criteria written as observable behavior. No code.
-5. **Decision map** — four to six named decisions. For each: the options (at least two, all live), the axis they trade off on, and two or three questions whose answers force the choice. Never a verdict. **Before you build, you write a short DSA** — your chosen option, your reasons, and one alternative you rejected and why. Commit it before you compare it to anything.
-6. **Research targets** — each one a question · a timebox · a done-when · and zero-to-two _optional_ seed resources. You find your own sources; the seeds are just a nudge when a nudge helps. Some targets carry none on purpose.
-7. **Out-of-scope fence** — plus the parking-lot reminder.
-8. **Measure ritual** — one tool, one number, framed as a _question_ ("flat or linear when N grows a thousandfold?"), never as a target to hit.
-9. **Hints ladder** — only for the one or two genuinely hard problems, direction-level, inside `<details>`. Three tiers: orient (name the concept or the analogous thing you already built) → approach (the shape, in prose) → near-spoiler (pseudocode, after two real attempts).
-10. **The slow walk** — the module run as a sequence of small numbered steps, each with an objective, the questions to answer before touching the keyboard, and a **Check** that must pass before the next step begins. This is the research-guide spine: work it top to bottom.
-11. **Prove it — the three rooms.** First a demonstration: run it, curl it, trace it, break it, and describe what you saw. Then the same build narrated three ways — **interview** (90 seconds: decision, tradeoff, the number), **design review** (one peer-level exchange: defend a choice against a named alternative), **meetup** (30 seconds: what you're hacking on, one hook).
+2. **Ground Floor** — the module's starting rung, below the Briefing. It takes you from zero to a working throwaway version of the plumbing: what each piece is responsible for, in the order to learn and build it, what to look up at each step, and what to notice and leave alone. Still no code. It ends with a hand-off table into the real build and a few check-yourself questions.
+3. **Briefing** — the concept and why it matters, in half a page or less, starting from zero. Every term is defined at first use; the jargon is earned, not assumed (see _Voice_, below). Points you at the anchor book in this project where one covers the ground.
+4. **The trap** — the classic pitfall this feature walks straight into, named in two or three sentences, _without_ the resolution. You should recognize it when it bites.
+5. **The feature** — requirements and contract only. Acceptance criteria written as observable behavior. No code.
+6. **Decision map** — four to six named decisions. For each: the options (at least two, all live), the axis they trade off on, and two or three questions whose answers force the choice. Never a verdict. **Before you build, you write a short DSA** — your chosen option, your reasons, and one alternative you rejected and why. Commit it before you compare it to anything.
+7. **Research targets** — each one a question · a timebox · a done-when · and zero-to-two _optional_ seed resources. You find your own sources; the seeds are just a nudge when a nudge helps. Some targets carry none on purpose.
+8. **Out-of-scope fence** — plus the parking-lot reminder.
+9. **Measure ritual** — one tool, one number, framed as a _question_ ("flat or linear when N grows a thousandfold?"), never as a target to hit.
+10. **Hints ladder** — only for the one or two genuinely hard problems, direction-level, inside `<details>`. Three tiers: orient (name the concept or the analogous thing you already built) → approach (the shape, in prose) → near-spoiler (pseudocode, after two real attempts).
+11. **The slow walk** — the module run as a sequence of small numbered steps, each with an objective, the questions to answer before touching the keyboard, and a **Check** that must pass before the next step begins. This is the research-guide spine: work it top to bottom.
+12. **Prove it — the three rooms.** First a demonstration: run it, curl it, trace it, break it, and describe what you saw. Then the same build narrated three ways — **interview** (90 seconds: decision, tradeoff, the number), **design review** (one peer-level exchange: defend a choice against a named alternative), **meetup** (30 seconds: what you're hacking on, one hook).
 
 Every build block ends with a **rubber-duck debrief**: two minutes, out loud, no notes — _what did I decide today, and why._ That's it. That habit is where "I built a thing" quietly becomes "I can talk about the thing."
 
@@ -232,6 +233,172 @@ _Four modules, one shared artifact. In M1 you write a resource contract — an `
 > - The contract exists as a standalone document before the code does.
 
 **Anchors:** the Java book and _Data & Objects_ in this project; _Where the Data Lives_ Part 10 (ORMs and the object–relational mismatch); the function-first React/TypeScript guide.
+
+### Ground Floor — How a request becomes code
+
+*Read this before the Briefing. The Briefing assumes you can already picture a working Spring endpoint feeding a React screen. This section gets you to that picture from zero. It tells you what each piece is responsible for, in the order to learn and build them, and what to look up at each step. It doesn't tell you how to write any of it. You'll build a throwaway `books` slice this way first, then take what you learned into `incidents`.*
+
+#### GF.1 — The picture first
+
+One request, end to end:
+
+```
+Browser (React)                         Server (Spring Boot)
+───────────────                         ─────────────────────────────────────────
+a component
+  └─ a hook that owns loading state
+       └─ an API module that owns URLs
+            │   HTTP GET /api/books
+            └────────────────────────▶  the framework's front door
+                                          └─ controller   "which code handles this URL?"
+                                               └─ service      "what does the app do about it?"
+                                                    └─ repository   "where does the data live?"
+                                               ◀─ Java objects
+                                          ◀─ serialized to JSON
+            ◀────────────────────────   status line + headers + body
+       ◀─ typed data
+  ◀─ re-render
+```
+
+Your goal for the Ground Floor is to be able to redraw this from memory and name the real Spring and React pieces in each box.
+
+#### GF.2 — MVC, then layers
+
+Start with the idea, not the framework.
+
+**Look up:** the original Model–View–Controller pattern (Smalltalk, late 1970s). Get clear on what each of the three parts was responsible for, and why they were split.
+
+Then work out why the split changes shape in a JSON API. In a server that renders HTML pages, the "view" is an HTML template. In an API, what is the view? What's left for the controller to do? You should arrive at the idea that the controller becomes a thin translator between HTTP and your program. Most real backends then add layers beneath it.
+
+**Look up:** layered architecture in Spring, specifically the controller / service / repository split. For each layer, be able to say in one sentence what its job is, and what it must *not* know about. For example: should the service know what an HTTP status code is? Should the controller know where data is stored?
+
+**Question to settle before moving on:** what does the split buy you? Think about swapping in-memory storage for Postgres (that's M2), adding a second way into the app besides HTTP, and testing business logic without starting a server. Which layers change in each case?
+
+#### GF.3 — Build it bare first, no framework
+
+Before Spring, build the endpoint once with nothing but the JDK, so you know exactly what a framework is saving you.
+
+**The task:** a single Java file, run directly with the `java` command, that listens on a port and answers `GET /api/books` with a small JSON array you write by hand. Reject any other HTTP method with the right status code.
+
+**Look up:** `com.sun.net.httpserver.HttpServer`, `HttpExchange`, and running single-file source programs (JEP 330). Then look up `curl -i` and what a raw HTTP response looks like: the status line, the headers, `Content-Type`, `Content-Length`.
+
+**Once it works, list what was painful.** Try to get it to handle a book by id from the path, filter by a query parameter, and produce JSON safely from Java objects instead of strings. Write down every chore you had to do by hand. That list is your map of what Spring does. Keep it; you'll check items off as you go.
+
+#### GF.4 — The Spring project and its startup
+
+**Do:** generate a project at start.spring.io with Maven, Java 21, and the Spring Web dependency. Open it and look around before writing anything.
+
+**Look up, in this order:**
+
+- What each generated file and folder is for, including the Maven wrapper and `application.properties`
+- What `@SpringBootApplication` does at startup. It bundles three behaviors; find all three.
+- Auto-configuration: why adding Spring Web alone gives you a running web server, and which server it is
+- Component scanning: what Spring is searching for, and where it looks. Find out what happens to a class placed outside the scanned package.
+- Beans and the application context: what Spring creates, how many of each, and who owns them
+
+**Question to settle:** after startup, before any request arrives, what objects exist and who made them?
+
+#### GF.5 — The model
+
+**Responsibility:** hold the data for one book. No I/O, no logic beyond the data itself.
+
+**Look up:** Java `record` types: what they generate for you, how their accessors are named, and how Jackson treats them.
+
+**Design note:** give your book at least one field that's clearly internal, something the public shouldn't see or depend on (where staff shelve it, say). You'll see why in GF.9.
+
+#### GF.6 — The repository
+
+**Responsibility:** store and retrieve books. Nothing else. An in-memory collection seeded with a few books is fine; persistence is M2's job.
+
+**Look up:**
+
+- The stereotype annotation for this layer, and what it does beyond marking the class
+- Why the built-in web server makes thread safety matter here, and which Java collection is safe to use
+- `Optional`, and why "find by id" should return one instead of a possible `null`
+- Whether map iteration order is guaranteed, and what that means for a list endpoint's output
+
+#### GF.7 — The service
+
+**Responsibility:** the business logic. Here, that's listing books (optionally filtered by author) and getting one by id. No HTTP concepts at all.
+
+**Look up:**
+
+- Dependency injection: what it is and what problem it solves
+- Constructor injection vs field injection, and why the Spring docs recommend constructor injection
+- How Spring decides what to pass into a bean's constructor, and when it does it
+
+**Check yourself:** read your finished service and confirm there's no status code, URL, or JSON anywhere in it.
+
+#### GF.8 — The controller
+
+**Responsibility:** translate HTTP into a method call and the result back into an HTTP response. Nothing more.
+
+**Build two routes:** list all books with an optional author query parameter, and get one book by id, returning not-found when it's missing.
+
+**Look up:**
+
+- `@RestController` vs `@Controller`, and what `@ResponseBody` has to do with it
+- The family of request-mapping annotations, and how a class-level mapping combines with method-level ones
+- How Spring pulls values out of the path and the query string and converts them to Java types
+- `ResponseEntity`: when a plain return value is enough, and when you need control over the status code
+- `DispatcherServlet` and the front controller pattern: the full trip from incoming connection to your method and back
+
+**Go back to your GF.3 list** and check off each chore Spring now handles. Note which annotation or mechanism replaced each one.
+
+#### GF.9 — Run it and observe
+
+Start the app with the Maven wrapper. Then use `curl -i` against: the list, the list filtered by author, an id that exists, an id that doesn't, and an id that isn't a number. Read every status line and every body.
+
+Two things to notice and **not fix yet**:
+
+1. **Is your internal field in the responses?** If so, every client can now see it and come to depend on it. That's M1's first trap.
+2. **Compare the not-found response with the non-numeric-id response.** Did anyone design either shape? That's M1's second trap.
+
+**Look up**, to understand what you're seeing: Spring Boot's default error handling, and the HTTP status codes 400, 404, 422, and 500.
+
+#### GF.10 — The React side
+
+**Do:** scaffold a React + TypeScript app with Vite.
+
+**First obstacle, the browser's:** your React dev server and Spring run on different ports. Try to fetch from one to the other and read the browser console error.
+
+**Look up:** same-origin policy, CORS, the preflight `OPTIONS` request, and Vite's dev-server proxy. Work out why proxying makes the CORS problem disappear in development instead of solving it, and what you'd do differently in production.
+
+Then build three pieces, each with one responsibility:
+
+- **Types.** The TypeScript shape of a book, mirroring the JSON. **Look up** what a TypeScript type guarantees at runtime, and what it doesn't.
+- **An API module.** The only place in the frontend that knows URLs; components never call `fetch` directly. **Look up** when `fetch` rejects and when it resolves, specifically what happens on a 404 or 500, and what your module must do about it.
+- **A hook.** It owns the request lifecycle: loading, data, error. **Look up** `useEffect`, its cleanup function, and the race condition when a component unmounts or re-requests mid-fetch. Build the simplest version that works.
+
+Then render the list in a component. Stop the Spring server and reload to see what your error path does.
+
+**Notice and leave alone:** in your simplest hook, can you tell "not loaded yet," "loaded, zero results," and "failed" apart? If one initial value stands in for more than one of those, that's the gap M1's acceptance criteria are about.
+
+#### GF.11 — Hand-off: what's yours in M1
+
+You now have a working vertical slice and a picture of every box in GF.1. For `incidents`, build the same layers again and solve what the Ground Floor left open on purpose:
+
+| Ground Floor left this… | M1 asks you to… |
+|---|---|
+| Internal model returned directly | Decide the public shape and keep it separate from your internals |
+| Undesigned not-found and bad-input responses | Design one structured error shape and make every failure use it |
+| Free-text filter that accepts anything | Accept a status filter and **reject** invalid values |
+| Everything returned at once | Paginate |
+| States that can't be told apart | Render loading, empty, and error distinctly, with a typed error |
+
+Then read the Briefing below. It's about exactly these decisions.
+
+#### GF.12 — Check yourself before moving on
+
+Answer out loud, without notes:
+
+- A request for one book by id arrives. Name every piece it passes through, server and client, in order, and what each does.
+- Why must the service never return a response object with a status code in it?
+- What does Spring do with the repository your service's constructor asks for, and when?
+- If you moved your controller into a package outside the scanned one, what would break, and why?
+- Your server returns 500. Does `fetch` reject? Where in your code does the 500 become an error?
+- What does your TypeScript `Book` type guarantee at runtime?
+- Which chores from your GF.3 list does Spring handle, and which does it still leave to you?
 
 ### Briefing
 
@@ -331,6 +498,120 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 
 **Anchors:** _Where the Data Lives_ (the whole SQL and indexing spine); the Python and data-science books; `Databases_and_DBMS_info.md`. Your M1 contract document is the primary spec.
 
+### Ground Floor — From a list in memory to rows on disk
+
+*Read this before the Briefing. It assumes you finished M1's Ground Floor, so you know the controller → service → repository shape, but have never stood up FastAPI or talked to Postgres from code. You'll rebuild the throwaway `books` slice on a real database first, with a second `authors` table so there's something to join. It tells you what each piece is for and what to look up, never how to write it. Indexes, query plans, and killing the N+1 are left for `incidents`.*
+
+#### GF.1 — The picture first
+
+```
+curl / React
+   │  HTTP GET /api/books
+   ▼
+ASGI server (uvicorn)            "speaks HTTP, hands requests to Python"
+   └─ FastAPI app
+        └─ route function        ≈ M1's controller
+             └─ service / query layer
+                  └─ database driver ──── TCP ────▶ PostgreSQL server
+                                                       └─ tables, on disk
+                  ◀─ rows
+             ◀─ Python objects / dicts
+        ◀─ serialized to JSON (via the response model)
+   ◀─ status + headers + body
+```
+
+New compared to M1: the data now lives in a **separate process**, reached over a network connection. Every query is a round trip. Hold onto that sentence; the whole module hangs off it.
+
+#### GF.2 — Postgres on its own, before any Python
+
+**Do:** get a Postgres server running locally (a container is the least messy way) and connect to it with `psql`.
+
+**Look up:**
+
+- What a database *server* is vs a database *file*, and why Postgres is the former
+- Running Postgres in Docker: image, port mapping, a volume so data survives a restart, setting the password via environment variables
+- The `psql` client, and the handful of backslash commands for listing databases, tables, and a table's columns
+
+**By hand, in `psql`:** create an `authors` table and a `books` table where each book belongs to one author. Insert a few rows. Select from each, then select books *with* their author's name.
+
+**Look up:** `CREATE TABLE`, primary keys, `SERIAL` / identity columns, foreign keys and what `REFERENCES` enforces, `INSERT`, `SELECT`, `JOIN`.
+
+**Question to settle:** try inserting a book pointing at an author id that doesn't exist. What stopped you, and why is the database the right place for that rule rather than your Python?
+
+#### GF.3 — Schema as a file, not a memory
+
+Typing `CREATE TABLE` into `psql` doesn't leave a record anyone else can replay.
+
+**Do:** put your schema and seed rows in a `.sql` file you can run against an empty database to get back to a known state.
+
+**Look up:** running a SQL file with `psql -f`; dropping and recreating a database; what a migration tool is (Alembic, Flyway) and why teams use one. You don't need one yet, so park it. M10 is the module for that.
+
+#### GF.4 — The FastAPI skeleton
+
+**Do:** make a Python virtual environment, install FastAPI and an ASGI server, and get a single route returning a hard-coded list of books.
+
+**Look up, in this order:**
+
+- Virtual environments (`venv`) and why you never install into the system Python
+- What ASGI is, what uvicorn does, and how that splits the work compared with Spring's embedded Tomcat
+- FastAPI's path operation decorators, path and query parameters, and how type hints drive parsing and validation
+- The automatic docs page FastAPI generates, and where its contents come from
+
+**Question to settle:** in M1, Spring found your controller by component scanning. How does FastAPI know your route exists?
+
+#### GF.5 — Models: the shape in, the shape out
+
+**Responsibility:** describe what a book looks like at the boundary, so FastAPI can serialize responses and validate input.
+
+**Look up:** Pydantic models, `response_model` on a route, and what FastAPI does when a response doesn't match the declared model.
+
+**Question to settle:** is a Pydantic model the same thing as a database row? Write down your answer now and check it again at the end of M2.
+
+#### GF.6 — Talking to Postgres from Python
+
+**Responsibility:** the one layer that knows SQL exists. Routes call into it; it hands back Python data.
+
+**Look up:**
+
+- Python Postgres drivers (psycopg, asyncpg), and what a *driver* is vs an *ORM*
+- Connections and connection pools: what each is, why opening a fresh connection per request is costly, and how you'd hold a pool for the app's lifetime
+- Parameterized queries, and exactly why building SQL by string formatting is an injection hole
+- How to keep the database URL and password out of your source code
+
+Don't settle raw SQL vs ORM for the throwaway; pick whichever lets you get rows back fastest. M2's decision map makes you choose properly for `incidents`.
+
+**Build:** a list route that returns books, and a route that returns one book by id. Then make the list include each book's **author name**.
+
+#### GF.7 — Run it and observe
+
+Hit both routes with `curl -i`, including an id that doesn't exist.
+
+**Do:** turn on query logging, either on the Postgres side or in your driver/ORM, so every SQL statement your app sends is printed. Then load the book list again and **count the statements**.
+
+**Notice and leave alone:** look at how you fetched author names. Was it one statement, or one per book? Seed fifty more books and count again. Whatever you see, don't fix it here. That count, and why it grows, is M2's trap.
+
+**Look up**, to read what you're seeing: Postgres's statement-logging setting, and what `EXPLAIN` prints for a simple `SELECT`. Just learn to read the output; tuning it is M2's work.
+
+#### GF.8 — Hand-off: what's yours in M2
+
+| Ground Floor left this… | M2 asks you to… |
+|---|---|
+| Whatever query style was fastest | Choose raw SQL, an ORM, or a builder, and defend it |
+| Author names fetched however they came out | Serve the related data with a bounded number of queries, and prove it |
+| No indexes, no plans read | Write a slow query, read its plan, add an index, read the plan again |
+| `books`, with any shape you liked | Serve M1's `incidents` contract byte-for-byte |
+| Timestamps not considered | Choose how time is stored, and why |
+
+Then read the Briefing below.
+
+#### GF.9 — Check yourself before moving on
+
+- Name every hop a request makes, from curl to a disk page in Postgres and back.
+- Why does a pool of connections beat one per request? What's the cost of a pool that's too big?
+- Show, out loud, why string-formatted SQL is injectable and parameterized SQL isn't.
+- Your Pydantic model and your table both have a `title` field. Which one is the contract?
+- How did you count the SQL statements behind one HTTP request, and what was the number?
+
 ### Briefing
 
 Now the contract meets a real database. FastAPI is Python's modern, type-hint-driven web framework; PostgreSQL is the open-source relational database that has quietly become the default serious choice. Re-serving M1's `incidents` contract here does two things at once: it proves the contract was real (a good contract ports; a bad one turns out to have been Spring trivia in disguise), and it drops you onto the database floor where the data-lifecycle thread lives. The center of gravity is **the round trip**: an HTTP request becomes a SQL query becomes rows becomes JSON — and every layer is a place to be careless.
@@ -416,6 +697,114 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 
 **Anchors:** the function-first React/TypeScript guide; your M1/M2 contract as the thing being _reshaped_.
 
+### Ground Floor — A query language instead of URLs
+
+*Read this before the Briefing. It assumes M1 and M2's Ground Floors, so REST endpoints and a Postgres table are familiar, but GraphQL and a Node server are not. You'll serve the throwaway `books` and `authors` as a graph first. This tells you what each piece does and what to look up, never how to write it. Batching, the error model, and cost limits are left for `incidents`.*
+
+#### GF.1 — The picture first
+
+```
+Client
+  │  HTTP POST /graphql   body: { query: "{ books { title author { name } } }" }
+  ▼
+Node HTTP server
+  └─ GraphQL server library
+       ├─ parse      text → syntax tree
+       ├─ validate   tree checked against the SCHEMA   ← bad queries die here
+       └─ execute    walk the tree; for each field, call its RESOLVER
+              Query.books        → fetch the list
+              Book.author (×N)   → fetch the author for each book
+  ◀─ { "data": { ... }, "errors": [ ... ] }
+```
+
+Two ideas to keep separate from the start: the **schema** says what's *allowed to be asked*, and **resolvers** say *how each field gets its value*.
+
+#### GF.2 — GraphQL as a language, before any server
+
+**Look up:**
+
+- What GraphQL is and the two REST pains it was created to solve (Facebook, 2012)
+- Schema Definition Language (SDL): object types, scalar types, non-null `!`, lists, and the root `Query` type
+- Queries vs mutations vs subscriptions, and what each is for
+- Arguments on fields, aliases, and variables
+
+**Do:** before writing any server, open a public GraphQL API's explorer (GitHub's is a classic), write a few queries by hand, and watch the response shape match the query shape exactly.
+
+**Question to settle:** GraphQL usually sends everything as a POST to one URL. What does that do to HTTP caching and to status codes, compared with M1?
+
+#### GF.3 — Node and a project, from zero
+
+**Do:** create a Node project with TypeScript and run a file that prints something.
+
+**Look up:** `npm init`, `package.json` scripts, running TypeScript in Node during development (a runner like `tsx`, or compiling with `tsc`), and the difference between ES modules and CommonJS imports. Expect at least one import error; read it fully.
+
+#### GF.4 — The schema
+
+**Responsibility:** the type system for your API. It declares `Book`, `Author`, how they relate, and which root queries exist.
+
+**Do:** write SDL for a `Book` with an `author` field and an `Author` with a `books` field, plus root queries to list books and get one by id.
+
+**Look up:** how your chosen server library (Apollo Server or GraphQL Yoga are the common pair) takes SDL and resolvers; and what *schema-first* vs *code-first* means. Don't commit to either yet; that's M3's first decision.
+
+#### GF.5 — Resolvers
+
+**Responsibility:** a function per field that knows how to produce that field's value.
+
+**Look up:**
+
+- The resolver signature: what `parent`, `args`, `context`, and `info` each contain
+- The default resolver, and why most scalar fields need no code at all
+- How a nested field's resolver receives its parent object, so `Book.author` gets the book it belongs to
+- The `context` object, and why it's created fresh for each request
+
+**Build:** resolvers backed by the Postgres tables from M2's Ground Floor, or by in-memory arrays if you skipped that. Make `Book.author` fetch the author for the book it's given.
+
+**Question to settle:** in M1 the *server* decided which fields came back. Who decides here, and at which stage in GF.1's picture is that enforced?
+
+#### GF.6 — Run it and observe
+
+Run the server, open its built-in explorer, and run queries. Then send one with `curl` so you see the raw POST body and response.
+
+Try these, and read every response in full:
+
+- Only `title` for every book
+- Books with their author's name
+- An author with their books, each with *its* author (a cycle)
+- A field that doesn't exist
+- A query with broken syntax
+
+**Notice and leave alone:**
+
+1. **Log every call into `Book.author`,** plus every database hit. Fetch twenty books with their authors and count. Don't fix it. That count is M3's trap.
+2. **Look at the HTTP status codes** on your broken queries and on a resolver that throws. Are they what M1 taught you to expect? The error model is M3's third decision.
+3. **That cycle you queried.** Ask yourself what stops a client nesting it fifty deep.
+
+#### GF.7 — A typed client query
+
+**Look up:** sending a GraphQL query from the browser with plain `fetch`; what a GraphQL client library (Apollo Client, urql) adds on top; and generating TypeScript types from a schema (GraphQL Code Generator).
+
+**Build:** one React component that sends one query, with whichever approach is quickest to get on screen.
+
+#### GF.8 — Hand-off: what's yours in M3
+
+| Ground Floor left this… | M3 asks you to… |
+|---|---|
+| Whichever schema style your library defaulted to | Choose schema-first or code-first, and defend it |
+| One database hit per author resolved | Batch it to a bounded number of hits, and prove it by logging |
+| Errors however the library shaped them | Decide partial success vs failing the whole query |
+| No pagination | Decide Relay connections vs a simpler shape, given M1's choice |
+| Nothing stopping a deep, cyclic query | Decide how you'll guard query cost |
+
+Then read the Briefing below.
+
+#### GF.9 — Check yourself before moving on
+
+- Name the three stages a query passes through on the server, and which one rejects a misspelled field.
+- What arrives in a resolver's `parent` argument, and how did your `Book.author` use it?
+- Why is `context` per-request, and what would break if it were shared across requests?
+- How many resolver calls did twenty books with authors cost you? Where did that number come from?
+- One URL, mostly POST: what did you give up from REST, and what did you get?
+
 ### Briefing
 
 REST serves _resources_: you ask for `/incidents` and you get incidents, in a shape the server decided. GraphQL inverts that — the client sends a query describing exactly the fields and relationships it wants, and the server returns precisely that graph, no more, no less. It exists to solve two REST pains: over-fetching (the mobile client gets fifty fields to show three) and under-fetching (the client makes six round trips to assemble one screen). Building the _same_ incident domain as a graph, in Node, teaches the paradigm by contrast — you already know what the REST version cost. The center of gravity is the **schema as a type system** and the **resolver as the thing that fetches one field**.
@@ -500,6 +889,108 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 > - A valid login grants access; an expired access token renews via refresh without re-entering credentials.
 
 **Anchors:** the networking primer in this project; _Where the Data Lives_ Part 14 (the security material); your Security+ track. Guards the M1/M2/M3 contract.
+
+### Ground Floor — What a login actually is
+
+*Read this before the Briefing. It assumes you have a working API from an earlier Ground Floor, Spring or FastAPI. It doesn't assume you've built authentication before. You'll put a login in front of the throwaway `books` API first. This tells you what each piece is responsible for and what to look up, never how to build it. Storage location, lifetimes, refresh, and revocation are left for M4 itself.*
+
+#### GF.1 — The picture first
+
+```
+1. Register   POST /register {user, password}
+                  └─ server stores user + a PASSWORD HASH (never the password)
+
+2. Log in     POST /login {user, password}
+                  └─ server hashes the attempt, compares, and on success
+                     issues a TOKEN, signed with a server-only secret
+              ◀─ token
+
+3. Use it     GET /api/books   Authorization: Bearer <token>
+                  └─ before the route runs, a FILTER / DEPENDENCY:
+                       is a token present?   is the signature valid?   is it expired?
+                       → pass the identity to the route, or reject
+```
+
+Three separate jobs: **proving** who you are once, **remembering** it across stateless requests, and **checking** it on every request. Most bugs come from blurring them.
+
+#### GF.2 — HTTP has no memory
+
+**Look up:**
+
+- What "stateless" means for HTTP, and why every request must carry its own proof
+- Authentication vs authorization, with one example of each failing in a real breach
+- The `Authorization` header and the Bearer scheme
+- Status codes 401 vs 403. Get them exactly right; people mix them up constantly.
+
+**Question to settle:** if the server keeps nothing between requests, what *must* the client send every time?
+
+#### GF.3 — Passwords, from zero
+
+**Look up:**
+
+- Hashing vs encryption: one of them is reversible by design
+- Salts: what they defeat (rainbow tables), and where they're stored
+- Why bcrypt and argon2 are deliberately slow, and what a work factor is
+- Your framework's standard password-hashing utility; you don't implement the algorithm yourself
+
+**Build:** a `users` table and a register route that stores a hash. Then open the table in `psql` and look at what's actually there.
+
+**Question to settle:** register two users with the same password. Are their stored hashes the same? Why or why not?
+
+#### GF.4 — Tokens, from zero
+
+**Look up:**
+
+- What a JWT is: header, payload, signature, base64url encoding
+- Paste any JWT into a decoder site and read its payload. Notice you didn't need a key to do that.
+- Signing vs encrypting; HMAC (one shared secret) vs RSA/EC (a key pair)
+- The standard claims: `sub`, `exp`, `iat`
+- What a server-side *session* is, as the older alternative to a token
+
+**Build:** a login route that checks the password against the stored hash and, on success, returns a signed token with a subject and an expiry. Use your ecosystem's standard JWT library.
+
+#### GF.5 — The gate
+
+**Responsibility:** run before protected routes, check the token, and either pass the user's identity along or reject the request. Routes themselves shouldn't contain token-checking code.
+
+**Look up:**
+
+- Spring: Spring Security's filter chain and how a request passes through it. Or FastAPI: dependencies, and its security utilities
+- Where the verified identity ends up so a route can read it (the security context in Spring, a dependency's return value in FastAPI)
+- How you mark some routes public and others protected
+
+**Build:** protect the books list. Register and login stay public.
+
+#### GF.6 — Run it and observe
+
+With `curl -i`: call the protected route with no token, with a valid token, with a token you've edited by hand (change one character of the payload), and with one that's expired. A short expiry makes that last case easy to test.
+
+**Notice and leave alone:**
+
+1. **Compare the four responses.** Can a client tell "no token," "bad token," and "expired" apart? M4 requires that it can.
+2. **Look at your decoded payload again.** What would happen if someone put something secret in there? That's half of M4's trap.
+3. **Your client.** Wherever you kept the token to make those curl calls work, ask who else could read it from there. That's the other half of the trap, and the module's second decision.
+4. **Your expiry.** When it runs out, the user has to type their password again. Fixing that is M4's refresh path.
+
+#### GF.7 — Hand-off: what's yours in M4
+
+| Ground Floor left this… | M4 asks you to… |
+|---|---|
+| A token, because it was quickest | Choose session cookies vs JWTs, and defend it |
+| Token kept wherever was handy | Decide where it lives on the client, and name the threat you accept |
+| One token, one expiry | Design access + refresh lifetimes |
+| No way to kill a token early | Choose a revocation strategy |
+| Rejections however they came out | Make no-token, expired, and tampered distinguishable |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- Walk through what the server does with a login attempt, from request body to issued token.
+- Why can anyone read a JWT's payload, and what does the signature actually guarantee?
+- Why must password hashing be slow when almost everything else should be fast?
+- Where in your framework does the token check run, and how does a route learn who the user is?
+- 401 or 403: a logged-in user asks for something they're not allowed to see. Which is it?
 
 ### Briefing
 
@@ -592,6 +1083,104 @@ _Three ways the browser keeps a UI in sync with data that won't hold still: reac
 
 **Anchors:** _Waiting, All the Way Up_ (the event-loop and Observable floors — this is the module that book was written to enable); the function-first React/TypeScript guide.
 
+### Ground Floor — How JavaScript waits
+
+*Read this before the Briefing. It assumes you can write React and TypeScript, but not that you can explain what actually happens between a keystroke and a rendered result. You'll build a naive search box over a throwaway list first, against a slow server you control. This tells you what each piece is for and what to look up, never how to write it. Debouncing, the race fix, and RxJS operators beyond the basics are left for the module.*
+
+#### GF.1 — The picture first
+
+```
+keystroke ─▶ input event ─▶ React state update ─▶ effect runs ─▶ fetch("/search?q=re")
+keystroke ─▶ input event ─▶ React state update ─▶ effect runs ─▶ fetch("/search?q=rea")
+                                                                      │       │
+                                     network: each one takes its own time
+                                                                      ▼       ▼
+                                               responses land in WHATEVER order they finish
+                                                      ─▶ setResults(...) ─▶ render
+```
+
+Everything in this module happens because the arrows on the right don't come back in the order the arrows on the left went out.
+
+#### GF.2 — The event loop, from zero
+
+**Look up:** *Waiting, All the Way Up*, the event-loop chapters. Then fill gaps with the following:
+
+- The call stack, the task queue, and the microtask queue
+- Why JavaScript is single-threaded and still doesn't freeze while a network request is pending
+- Where `fetch` actually does its waiting (not on your thread)
+- Promises: pending, fulfilled, rejected; `.then` chains; what `async`/`await` turns into
+
+**Question to settle:** you call `fetch` twice in a row. Which finishes first? What decides it?
+
+#### GF.3 — A slow server you control
+
+You can't study ordering against a server that always answers instantly.
+
+**Build:** a tiny search endpoint over a hard-coded list of words (fruit, cities, anything) that waits a **random** delay before answering. Make the delay range wide enough that answers often come back out of order.
+
+**Look up:** a minimal HTTP server in Node (or reuse FastAPI from M2); `setTimeout` as an artificial delay; query string parsing; and either the Vite proxy from M1 or CORS headers, so your React app can reach it.
+
+#### GF.4 — The naive search box
+
+**Build:** an input, a results list, and a fetch that fires on every change. Use the simplest thing that works.
+
+**Look up:**
+
+- Controlled inputs in React
+- `useEffect` dependency arrays: when the effect re-runs, and when its cleanup function runs
+- The Network tab in DevTools: filtering to fetch requests, reading each one's timing, and throttling the connection
+
+#### GF.5 — Run it and observe
+
+Type a word quickly. Then watch.
+
+**Notice and leave alone:**
+
+1. **Count requests vs keystrokes** in the Network tab. Don't fix it. That's M5's debounce decision.
+2. **Find a moment where the results on screen don't match the input.** It'll happen with the random delay; if it doesn't, widen the range. Write down exactly which request's answer you're looking at. That's the trap. Don't fix it here.
+3. **There's no loading, empty, or error state yet,** or there's a crude one. Leave it; both builds need identical ones.
+
+#### GF.6 — Cancellation, as a concept
+
+**Look up:** `AbortController` and `AbortSignal`; what happens to a fetch when it's aborted; what an aborted fetch's promise does (and what error it rejects with); and whether the *server* knows a request was aborted.
+
+Don't wire it into your search box yet. Just abort one fetch by hand in a scratch file and see what happens.
+
+#### GF.7 — Observables, from zero
+
+**Look up, in this order:**
+
+- What an Observable is, vs a Promise: one value vs many over time; lazy vs eager
+- `subscribe`, the observer object (`next`, `error`, `complete`), and unsubscribing
+- `fromEvent` for turning DOM events into a stream
+- `pipe`, and the two simplest operators, `map` and `filter`
+- How to subscribe inside a React component and clean up on unmount
+
+**Build:** in a scratch component, turn the input's events into a stream, `map` them to the input's text, and log every value. That's all. The time and cancellation operators are M5's real material.
+
+**Question to settle:** if you forget to unsubscribe when the component unmounts, what keeps running?
+
+#### GF.8 — Hand-off: what's yours in M5
+
+| Ground Floor left this… | M5 asks you to… |
+|---|---|
+| A request per keystroke | Choose debounce vs throttle, then build it by hand in version (a) |
+| Out-of-order answers overwriting newer ones | Make a stale result provably impossible, in both versions |
+| `AbortController` tried in isolation | Decide between cancelling stale requests and ignoring their answers |
+| A stream that only logs | Build the full reactive pipeline, and know the `switchMap` family |
+| No retry | Decide on retry and backoff |
+| Crude or missing states | Identical loading, empty, and error states in both builds |
+
+Then read the Briefing below.
+
+#### GF.9 — Check yourself before moving on
+
+- Explain, using the event loop, why two fetches can come back in either order.
+- When does a React effect's cleanup function run?
+- What does aborting a fetch do on the client, and what does it *not* undo on the server?
+- Promise vs Observable: name two differences you could demonstrate in code.
+- Describe one stale result you saw: which input was on screen, and which request's answer was showing?
+
 ### Briefing
 
 "Reactive programming" sounds like a paradigm you need a philosophy degree for. It isn't. It's one idea: instead of _asking_ for a value when you want it (pull), you _declare_ what should happen whenever a new value arrives (push), and something else runs your declaration each time. A stream of keystrokes, a stream of mouse moves, a stream of server responses — RxJS models all of them as an **Observable**, a thing you can filter, delay, and cancel with the same vocabulary. The way to learn whether it earns its complexity is to build the same feature twice — once with plain async/await, once reactive — and feel the difference in your hands. The center of gravity is **cancellation and time**: what a program does when answers arrive out of order.
@@ -675,6 +1264,98 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 > - A cache hit in the React app skips the network (visible in DevTools).
 
 **Anchors:** `leetcode_thinking_toolbox.md` (the primary text — this module is where its pattern vocabulary goes live); `DATA_STRUCTURES___ALGORITHMS.md`.
+
+### Ground Floor — Nodes, pointers, and how to time code
+
+*Read this before the Briefing. It assumes you know TypeScript and basic Big-O vocabulary, but not that you've built a linked structure by hand or benchmarked anything. You'll build the separate pieces first: a linked list on its own, a timing harness, and an uncached fetch hook. This tells you what each is for and what to look up, never how to write it. Combining a map and a list into an O(1) LRU is the whole module, so none of that is here.*
+
+#### GF.1 — The picture first
+
+```
+What you'll have after the Ground Floor (separate pieces, not yet connected):
+
+  Map<key, value>          a linked list of nodes          a timer harness
+  ┌─────┬───────┐          [A] ─▶ [B] ─▶ [C] ─▶ null       N = 10³ … 10⁶
+  │ key │ value │                                          ops/sec per N
+  └─────┴───────┘
+
+  useThing(id) ─── fetch ───▶ server        (every call goes to the network)
+```
+
+M6 is about wiring the first two into one structure and putting it between the hook and the network.
+
+#### GF.2 — Big-O, honestly
+
+**Look up:** `leetcode_thinking_toolbox.md` and the DSA book in this project, specifically the sections on complexity and on hash tables. Then confirm the following:
+
+- Average vs worst case, and what "amortized" means
+- Why hash lookup is O(1) on average, and what makes it degrade
+- Why finding an item in an array or list *by value* is O(n), however you write the loop
+- How `Map` differs from a plain object in JavaScript (key types, iteration order, size)
+
+**Question to settle:** an operation does one hash lookup and then one loop over every entry. What's its complexity?
+
+#### GF.3 — TypeScript classes and generics
+
+**Look up:** classes in TypeScript (fields, constructors, `private`); generic type parameters on a class; constraining a generic with `extends`; and how to write a type for "a node that holds a value of type T and points to another node, or nothing."
+
+#### GF.4 — A linked list on its own
+
+**Build:** a singly linked list with no connection to any cache. It should let you add to the front, add to the end, remove from the front, find a node by value, and print itself in order. Draw each operation on paper before you code it.
+
+**Look up:** singly vs doubly linked lists; head and tail pointers; and the edge cases that break naive code (empty list, one element, removing the tail).
+
+**Question to settle:** for each operation you built, what's its complexity? Which one is O(n), and why can't a singly linked list fix that?
+
+Don't build the doubly linked list the LRU needs. That decision, and its design, belong to the module.
+
+#### GF.5 — A benchmark harness
+
+**Responsibility:** answer "does this operation stay flat as the structure grows?" with numbers instead of a feeling.
+
+**Look up:**
+
+- `performance.now()` vs `Date.now()`, and why resolution matters
+- Warm-up runs and why the first measurements in a JIT-compiled runtime lie
+- Running many operations and measuring the total, rather than timing one
+- Running the benchmark in Node instead of the browser, and why that's steadier
+
+**Build:** a harness that fills a structure to size N, times a large batch of one operation, and prints time per operation for N from a thousand to a million. Test it on two operations you already know the answer for: `Map.get` (should stay flat) and your linked list's find-by-value (shouldn't).
+
+#### GF.6 — The uncached fetch hook
+
+**Build:** a React hook that fetches one record by id, from whichever throwaway API you built earlier. A component that lets you switch between a few ids.
+
+**Look up:** custom hooks; `useRef` vs `useState` (what survives a re-render, what causes one); module-level variables in an ES module and how many copies exist; and React Context.
+
+#### GF.7 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Your benchmark's two lines.** One should be flat, one should climb. If they don't, fix the harness before trusting it with your LRU.
+2. **Network tab while you switch back and forth between two ids.** Every switch is a request. That's what M6's cache removes.
+3. **The three places you just read about holding state** (a module variable, a ref, context). Where a cache instance should live is M6's fifth decision; don't pick yet.
+
+#### GF.8 — Hand-off: what's yours in M6
+
+| Ground Floor left this… | M6 asks you to… |
+|---|---|
+| A map and a list, unconnected | Combine them into one structure with O(1) `get` and `put` |
+| A singly linked list | Decide whether to build the doubly linked list or lean on `Map` order, and defend it |
+| A benchmark tested on known cases | Prove your LRU stays flat from 10³ to 10⁶ |
+| A hook that always hits the network | Serve repeat lookups from the cache, visibly |
+| Three possible homes for state | Choose where the cache instance lives, and how it's invalidated |
+| No eviction | Design the eviction API |
+
+Then read the Briefing below. From here on, start each build block with two timed rep-circuit problems, as the Briefing explains.
+
+#### GF.9 — Check yourself before moving on
+
+- Draw removing the tail of a singly linked list. Why is it O(n)?
+- What does "O(1) amortized" mean, and which built-in structure you used depends on it?
+- Why is the first round of a JavaScript benchmark untrustworthy?
+- What did your benchmark show for `Map.get` and for list find, at 10³ and 10⁶?
+- `useRef` vs a module-level variable: which is shared across components, and which dies on unmount?
 
 ### Briefing
 
@@ -762,6 +1443,100 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 > - A new joiner sees what was said before them.
 
 **Anchors:** _Waiting, All the Way Up_ (the event-loop and async floors); the networking primer.
+
+### Ground Floor — A connection that stays open
+
+*Read this before the Briefing. It assumes you've built HTTP endpoints but not a persistent connection. You'll build an echo server and then a dumb broadcast first, using two browser windows. This tells you what each piece is for and what to look up, never how to write it. Presence, history, delivery guarantees, and reconnection are the module's work.*
+
+#### GF.1 — The picture first
+
+```
+HTTP (M1–M4):     client ──request──▶ server ──response──▶ client      (line goes quiet)
+
+WebSocket:        client ──HTTP GET + "Upgrade: websocket"──▶ server
+                  ◀────────── 101 Switching Protocols ──────────
+                  ════════ one TCP connection, held open ════════
+                  client ◀──── message ────▶ server   (either side, any time)
+                                 ...
+                  either side closes, or the network drops (sometimes silently)
+```
+
+The server keeps a **set of open connections** in memory. Everything in M7 is about what you store alongside that set, and what happens when one disappears.
+
+#### GF.2 — The protocol, from zero
+
+**Look up:**
+
+- Why plain HTTP can't let the server speak first, and the older workarounds (polling, long-polling, Server-Sent Events)
+- The WebSocket handshake: the upgrade request, status 101, and what happens to the HTTP connection afterward
+- Frames, text vs binary messages, and close codes
+- `ws://` vs `wss://`, and why production always uses the second
+
+**Do:** open DevTools on any site that uses WebSockets, find the connection in the Network tab, and read its message frames live.
+
+#### GF.3 — An echo server
+
+**Build:** a Node server, using the `ws` package, that accepts connections and sends every message straight back to whoever sent it. Log each connection, message, and close on the server.
+
+**Look up:** the `ws` server's connection, message, and close events; the per-connection socket object; and how to run it alongside (or inside) an ordinary HTTP server.
+
+#### GF.4 — The browser side
+
+**Build:** a plain page, or a React component, that opens a connection, shows every message received, and has an input to send one.
+
+**Look up:**
+
+- The browser `WebSocket` API: its `open`, `message`, `close`, and `error` events, `send`, and `readyState`
+- Why messages are strings or binary, so you'll `JSON.stringify` and `JSON.parse` your own envelope
+- In React: opening a connection in an effect, closing it in the cleanup, and what Strict Mode's double-mounting does to your connection count in development
+
+#### GF.5 — A message envelope
+
+**Responsibility:** one agreed shape for everything that travels over the socket, so either side can tell kinds of message apart.
+
+**Do:** write the envelope down as a contract before coding: a `type` field and a payload. This is allowed; it's a spec, like M1's contract.
+
+**Question to settle:** once you have more than one kind of message, how does the receiver know which code should handle it?
+
+#### GF.6 — Dumb broadcast
+
+**Build:** change the echo so every message is sent to **every** connected client, not just the sender. Open two windows and talk between them.
+
+**Look up:** keeping a collection of connected sockets on the server; iterating over it to send; and checking a socket is still open before sending to it.
+
+#### GF.7 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Close one window.** Watch the server log. How long until the server knows, and does it always know? Try killing the browser process or turning off wifi instead of closing the tab. That gap is where M7's ghosts come from.
+2. **Restart the server.** What do both windows show? What happened to everything that was said? Who's "online" now?
+3. **Open a third window after some messages have been sent.** What does it see?
+
+Don't fix any of these. They're presence, persistence, and reconnection: the module's decisions.
+
+**Look up**, to understand what you saw: TCP keepalive vs WebSocket ping/pong, and why a dead connection can look alive for a while.
+
+#### GF.8 — Hand-off: what's yours in M7
+
+| Ground Floor left this… | M7 asks you to… |
+|---|---|
+| Raw `ws` and the browser API, because they're simplest | Decide raw vs a library, and what the library would hand you |
+| Nothing kept except the socket set | Split ephemeral state from persistent state, and put each where it belongs |
+| Late joiners see nothing | Give them history |
+| Closed windows linger, or don't, unpredictably | Presence with no ghosts |
+| Messages sent once, hope for the best | Choose a delivery guarantee |
+| A dropped connection just stays dropped | Handle reconnection and catching up |
+| Everyone gets everything | Decide broadcast scope |
+
+Then read the Briefing below.
+
+#### GF.9 — Check yourself before moving on
+
+- Walk through the handshake: what the client sends, what the server answers, what the connection becomes.
+- Why can't plain HTTP do what you just built? What did people do before WebSockets?
+- Why does your server need a collection of sockets, and what's in it right after a server restart?
+- How did the server learn a window closed, and in which case didn't it?
+- Why `JSON.stringify` an envelope instead of sending bare text?
 
 ### Briefing
 
@@ -853,6 +1628,92 @@ _Data at rest and data in motion between shapes. Analyze it in two languages (M8
 
 **Anchors:** the Python and data-science books in this project (the pandas/SQL material); `Databases_and_DBMS_info.md`.
 
+### Ground Floor — Notebooks and two data dialects
+
+*Read this before the Briefing. It assumes you can write Python but haven't done much pandas, and have never touched R. You'll get both running and answer a toy question in each first. This tells you what each piece is for and what to look up, never how to write it. The real dataset, the real question, and reproducibility discipline are the module's.*
+
+#### GF.1 — The picture first
+
+```
+notebook (.ipynb / .qmd)
+  ├─ markdown cell     prose: the question, the claim
+  ├─ code cell  ──▶ KERNEL (a live Python or R process holding every variable you've made)
+  │                    ◀── output: a table, a number, a chart
+  └─ ... cells can run in ANY order; the kernel remembers ALL of it
+```
+
+The kernel's memory is the whole story of this module's trap. Know it's there from the start.
+
+#### GF.2 — Jupyter, from zero
+
+**Look up:** installing JupyterLab in a virtual environment; what a kernel is; the execution counter beside each cell; and the "Restart kernel and run all" command.
+
+**Do:** make a notebook, define a variable in cell 2, use it in cell 3, delete cell 2, and run cell 3 again. Explain what you see.
+
+#### GF.3 — pandas, the first hour
+
+**Look up, in this order:**
+
+- What a DataFrame and a Series are
+- Reading a CSV; `head`, `info`, `describe`, `dtypes`
+- Selecting columns, filtering rows with a boolean mask, sorting
+- Adding a derived column
+- Split-apply-combine as an *idea*, then what `groupby` does in pandas
+- One chart from a DataFrame (pandas' built-in plotting or matplotlib)
+
+**Do:** on any small public CSV, answer one toy question with one grouped aggregation and one chart.
+
+#### GF.4 — R and the tidyverse, the first hour
+
+**Do:** install R, then an environment to run it in (RStudio, or an R kernel in Jupyter, or Quarto). Install the tidyverse.
+
+**Look up, in this order:**
+
+- R basics: vectors, `<-`, data frames vs tibbles, how packages load
+- `readr` for reading the CSV
+- The `dplyr` verbs: `filter`, `select`, `mutate`, `arrange`, `group_by`, `summarise`
+- The pipe (`|>` or `%>%`) and why the tidyverse is built around it
+- One `ggplot2` chart: data, aesthetics mapping, a geom
+
+**Do:** the *same* toy question on the *same* CSV, in R. Check you get the same number.
+
+#### GF.5 — Missing values, as a concept
+
+**Look up:** how pandas represents missing data (`NaN`, `None`, `pd.NA`) and how R does (`NA`); and what a mean or sum does by default in each when it meets one.
+
+**Do:** blank out a few values in your toy CSV and rerun both. Did either number change? Did either warn you?
+
+Don't decide how to handle missing data yet. That's M8's third decision.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Restart and run all** on both toy notebooks. Did both still work? If either broke, find out why. That's M8's trap in miniature.
+2. **Put your pandas group-by and your dplyr version side by side.** Which reads more like the sentence you'd say out loud? Hold that thought for the first decision.
+3. **Your file was tiny.** Ask yourself what happens to "load everything into a DataFrame" at a few million rows.
+
+#### GF.7 — Hand-off: what's yours in M8
+
+| Ground Floor left this… | M8 asks you to… |
+|---|---|
+| A toy CSV and a toy question | One real question, on a real dataset that isn't toy-tiny |
+| Both dialects tried | Decide which idiom expresses your transform better, and say why |
+| Two separate notebooks by default | Decide whether to keep them apart or bridge them |
+| Missing values noticed | Choose how to handle them, knowing how each language represents them |
+| All work done in memory | Decide whether heavy aggregation should happen in SQL first |
+| One restart-and-run-all test | Make both notebooks reproduce, every time |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What is a kernel, and what does it remember that the notebook file doesn't show?
+- Describe split-apply-combine, then name the pandas method and the dplyr verbs that do it.
+- What does a mean do with a missing value by default in pandas, and in R?
+- What does `ggplot2` mean by an *aesthetic*?
+- Did your two toy notebooks agree? If not, why not?
+
 ### Briefing
 
 A data-analysis notebook is a document that interleaves prose, code, and its output — you think in it, and the reader watches you think. Two languages own this space for different reasons: **Python** (with pandas) is the general-purpose workhorse that also does everything else; **R** (with the tidyverse) was built by statisticians for exactly this and often expresses a transformation more directly. Doing the _same_ analysis in both, in one project, teaches the shape of data work independent of either dialect — and being able to read both is a real edge, because data teams are mixed. The center of gravity is **the split-apply-combine pattern**: group the data, do something per group, stitch the results back — the move under almost every real analysis.
@@ -926,6 +1787,99 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 > - The headline claim survives a sanity check you designed to break it.
 
 **Anchors:** the Python/data-science books; the honest-verb discipline (this module touches a domain you don't claim expertise in — the discipline matters here more than anywhere).
+
+### Ground Floor — From notebook to pipeline
+
+*Read this before the Briefing. It assumes M8's Ground Floor, so pandas and a notebook are familiar, but not that you've turned analysis into something that runs with one command. You'll restructure a toy analysis into a pipeline first. This tells you what each piece is for and what to look up, never how to write it. Environment pinning, provenance, domain quirks, and sanity checks are the module's.*
+
+#### GF.1 — The picture first
+
+```
+data/raw/            ← never edited, ever
+   │
+   ▼  step 1: ingest     (read, check row counts, write)
+data/interim/
+   │
+   ▼  step 2: clean      (every change logged with a reason)
+data/processed/
+   │
+   ▼  step 3: analyze    (the grouped comparison)
+results/
+   │
+   ▼  step 4: plot
+figures/final.png
+
+one command at the top runs all four, in order
+```
+
+A notebook is a place to think. A pipeline is a place to *rerun*. M9 needs both, and this Ground Floor builds the second.
+
+#### GF.2 — A script is not a notebook
+
+**Look up:**
+
+- Running a Python file from the command line; `if __name__ == "__main__":`
+- Command-line arguments with `argparse`
+- Paths with `pathlib`, and why paths relative to the current directory break when someone runs your script from elsewhere
+- Python's `logging` module vs `print`
+
+**Do:** take the toy analysis from M8's Ground Floor and move it out of the notebook into a script that reads an input path and writes an output file.
+
+#### GF.3 — Raw stays raw
+
+**Look up:** the convention of an immutable `raw/` folder and derived folders (the "cookiecutter data science" layout is a common reference); and why you write intermediate files instead of passing everything through memory.
+
+**Build:** split your script into steps, each reading the previous step's output file and writing its own.
+
+**Question to settle:** if someone hands you a corrected raw file next month, what's the least work it takes to regenerate the final figure?
+
+#### GF.4 — One command
+
+**Look up:** a `Makefile` as a pipeline runner (targets, dependencies, why it only reruns what changed), or a single orchestrating script; and what `make -n` shows you.
+
+**Build:** one command that runs every step from raw to figure.
+
+#### GF.5 — Counting what you touch
+
+**Look up:** logging row counts before and after each step; `value_counts` for checking categories; and assertions in a data script (`assert`, and what happens when one fails mid-pipeline).
+
+**Build:** make every step log how many rows came in and how many went out.
+
+#### GF.6 — A figure as a file
+
+**Look up:** saving a matplotlib figure to a file; setting its size and resolution; axis labels and units; and why a figure needs a caption saying what data and which step produced it.
+
+#### GF.7 — Run it and observe
+
+Delete everything except `raw/` and run your one command.
+
+**Notice and leave alone:**
+
+1. **Did it regenerate the same figure?** It should. If it didn't, find out why.
+2. **Look at your row-count logs.** Somewhere rows probably disappeared. Can you say *why* for every one? M9 requires that you can.
+3. **Your environment.** It works on your machine, today, with whatever library versions you have. What happens next year? That's M9's second decision.
+4. **Anything in your toy data you didn't understand,** like an odd category or an ambiguous column. You probably just guessed. M9 asks what you should do instead.
+
+#### GF.8 — Hand-off: what's yours in M9
+
+| Ground Floor left this… | M9 asks you to… |
+|---|---|
+| A toy analysis | A representative biomedical-style dataset and a defensible result |
+| Notebook moved wholesale into a script | Decide notebook vs pipeline, or how to have both |
+| Whatever library versions you had | Make the environment reproducible next year |
+| Row counts logged | Document every dropped or changed record with a why |
+| Guesses about odd data | Handle domain quirks honestly, surfaced for an expert |
+| A figure that regenerates | A sanity check designed to break your headline claim |
+
+Then read the Briefing below.
+
+#### GF.9 — Check yourself before moving on
+
+- Why must `raw/` never be edited, even to fix an obvious typo?
+- What does Make do when you rerun after changing only the plotting step?
+- How does a script find its input files regardless of where it's run from?
+- Name every step between raw data and your figure, and what each writes.
+- For one row your pipeline dropped, can you say why?
 
 ### Briefing
 
@@ -1002,6 +1956,93 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 > - The rollback returns a working prior state; the new required column is correctly backfilled.
 
 **Anchors:** _Where the Data Lives_ Part 8 (migrations — the book flags this as the skill interviews probe hardest); your M2 Postgres table as the source.
+
+### Ground Floor — Changing a table that already has data
+
+*Read this before the Briefing. It assumes M2's Ground Floor, so you can create tables and query them, but not that you've changed the shape of a table already full of rows. You'll practice on a clean throwaway table first. This tells you what each piece is for and what to look up, never how to write it. Messy data, backfills, idempotency, and rollback design are the module's.*
+
+#### GF.1 — The picture first
+
+```
+schema v1  ──▶  migration 001 (forward)  ──▶  schema v2
+           ◀──  migration 001 (rollback) ◀──
+
+A migration = a script that changes SCHEMA (columns, constraints)
+              and sometimes DATA (filling a new column)
+              — applied to a database that may be in use while it runs
+```
+
+The rows are already there. Every statement you run has to make sense for every one of them.
+
+#### GF.2 — Schema changes, from zero
+
+**Look up:**
+
+- `ALTER TABLE`: adding, renaming, and dropping columns; changing a column's type
+- Constraints: `NOT NULL`, `UNIQUE`, `CHECK`, foreign keys, and adding them to an existing table
+- Default values, and what adding a column *with* a default does to existing rows
+- *Where the Data Lives* Part 8, on migrations
+
+**Do:** on a clean throwaway table with a few tidy rows, add a column, rename one, add a `CHECK` constraint, and drop a column. After each, look at the table again.
+
+#### GF.3 — Transactions
+
+**Look up:**
+
+- `BEGIN`, `COMMIT`, `ROLLBACK`, and what "atomic" means
+- That Postgres can run most schema changes *inside* a transaction, and why that's unusual among databases
+- Locks: what an `ALTER TABLE` locks, and what happens to other sessions trying to read or write meanwhile
+
+**Do:** open two `psql` sessions. In one, `BEGIN` and alter the table without committing. In the other, try to read and write the table. Then `ROLLBACK` the first and check the table is untouched.
+
+#### GF.4 — Migration files and tools
+
+**Look up:**
+
+- Numbered migration files as plain SQL, and why order matters
+- What migration tools add (Alembic for Python, Flyway for Java): a table that records which migrations have run, and an up/down pair per migration
+- Where that bookkeeping table lives, and what happens if someone edits an already-applied migration
+
+**Build:** two migration files for your throwaway table, applied with whichever tool you pick or by hand, plus their reversals.
+
+#### GF.5 — Updating existing rows
+
+**Look up:** `UPDATE ... SET ... WHERE`; `UPDATE` using values from another column or another table; and `RETURNING` for seeing what changed.
+
+**Do:** add an empty column to your clean table and fill it from existing columns.
+
+#### GF.6 — Run it and observe
+
+Now, on your clean throwaway table only, deliberately insert one row with a null where you're about to require a value, and one duplicate where you're about to require uniqueness.
+
+**Notice and leave alone:**
+
+1. **Add `NOT NULL` and `UNIQUE`.** Read the errors exactly. What did Postgres refuse, and did any part of your migration get applied? This is M10's trap at toy scale.
+2. **Run a migration twice.** What happens the second time? M10 requires it to be safe.
+3. **Drop a column, then try to reverse it.** What did your "down" migration actually give back? That gap is M10's fifth decision.
+
+Don't clean up the bad rows. Deciding what to do with them is the module.
+
+#### GF.7 — Hand-off: what's yours in M10
+
+| Ground Floor left this… | M10 asks you to… |
+|---|---|
+| A clean table with two planted bad rows | A realistically messy dataset, every bad row handled |
+| Direct `ALTER`s | Decide in-place vs expand-contract |
+| Constraint errors read, not resolved | Fix, quarantine, or reject offending rows, with logged reasons |
+| One `UPDATE` over a few rows | Choose a backfill strategy for a large, live table |
+| Migrations that may fail on a second run | Make the forward migration idempotent |
+| A "down" migration that didn't bring data back | Design a rollback that returns a working state |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What does adding `NOT NULL` to a column with one null in it do, and does the table change at all?
+- Why does running a schema change inside a transaction matter if it fails halfway?
+- What does a migration tool's bookkeeping table record, and why should you never edit an applied migration?
+- What did your second session experience while the first held an uncommitted `ALTER`?
+- After dropping a column, what can a rollback restore, and what can't it?
 
 ### Briefing
 
@@ -1093,6 +2134,90 @@ _Four modules that compose into a mini manufacturing system, and a domain that h
 > - A cyclic BOM is detected and refused, not looped on forever.
 
 **Anchors:** _Where the Data Lives_ (schema design, recursive queries); the tree material implied across the DSA docs.
+
+### Ground Floor — Trees stored in tables
+
+*Read this before the Briefing. It assumes you can write SQL from M2's Ground Floor and know what recursion is in the abstract, but not that you've stored a hierarchy in a table or walked one end to end. You'll do it first on a throwaway org chart, which has no quantities or costs. This tells you what each piece is for and what to look up, never how to write it. Quantities, roll-ups, critical paths, diamonds, and cycles are the module's.*
+
+#### GF.1 — The picture first
+
+```
+The tree:                     The table (one row per node):
+        CEO                   id | name   | manager_id
+       /   \                   1 | CEO    | NULL        ← the root
+    CTO     CFO                2 | CTO    | 1
+    /  \       \               3 | CFO    | 1
+  Dev1  Dev2   Acct            4 | Dev1   | 2
+                               5 | Dev2   | 2
+                               6 | Acct   | 3
+
+Each row points at its parent. The tree exists only when you WALK it.
+```
+
+#### GF.2 — Recursion, from the floor
+
+**Look up:**
+
+- Base case and recursive case; what happens with no base case
+- The call stack: one frame per call, and what a stack overflow is (M18 goes deeper)
+- Depth-first vs breadth-first traversal, drawn on paper
+- Pre-order vs post-order, and which you need when a parent's answer depends on its children's
+
+**Do:** on paper, compute "how many people report up to the CTO, at any depth" for the tree above. Then say which order you visited the nodes in.
+
+#### GF.3 — Hierarchies in a relational table
+
+**Look up:**
+
+- The adjacency list model (a `parent_id` column), and a self-referencing foreign key
+- Why the root's parent is `NULL`, and what that does to `WHERE parent_id = ...` queries
+- Other models you'll hear named: nested sets, materialized paths, closure tables. Park them; M11 uses the adjacency list.
+
+**Build:** an `employees` table with a `manager_id` that references the same table. Seed it with a three- or four-level org chart.
+
+#### GF.4 — Walking it in application code
+
+**Build:** in Python, Java, or TypeScript, load the table and write a recursive function that returns everyone under a given person, at every depth, and the headcount.
+
+**Look up:** building an in-memory lookup from each parent to its children so you aren't scanning every row on every call; and what your language's default recursion limit is.
+
+#### GF.5 — Walking it in SQL
+
+**Build:** the same headcount, in one SQL query.
+
+**Look up:** `WITH RECURSIVE` common table expressions: the anchor member, the recursive member, `UNION ALL`, and how the recursion stops.
+
+Don't decide which approach you'll use for the BOM. That's M11's first decision; you just need to be able to write both.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Compare the two approaches.** Which could you step through in a debugger? Which pulled the whole table into memory?
+2. **Make someone their own manager's manager.** Update a row so the tree loops back on itself. Run both versions. What happened, and how long did you wait? That's M11's trap.
+3. **Think about an org chart where someone reports to two managers.** Can your table even say that? Hold the thought for diamonds.
+
+#### GF.7 — Hand-off: what's yours in M11
+
+| Ground Floor left this… | M11 asks you to… |
+|---|---|
+| An org chart with no numbers | The given `Components` schema with cost, lead time, and quantity |
+| Both traversal styles tried | Choose database recursion or application recursion, and defend it |
+| A headcount (a simple count) | Roll up cost, multiplying by quantity at every edge |
+| No notion of time | Roll up build time, knowing parallel branches don't simply add |
+| A loop you created and watched hang | Detect cycles and refuse them |
+| No shared nodes | Count a shared subcomponent correctly |
+| No limit on depth | Decide whether to guard depth |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- In your recursive function, what was the base case?
+- Explain the anchor and recursive members of a `WITH RECURSIVE` query.
+- Why is the root's `parent_id` null, and how did you find the root?
+- When a parent's answer depends on its children's, which traversal order do you need?
+- What did each version do when you created a loop?
 
 ### Briefing
 
@@ -1193,6 +2318,84 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 
 **Anchors:** _Where the Data Lives_ (data modeling); M11's `lead_time_days` is an input here.
 
+### Ground Floor — Dates, pure functions, and tests
+
+*Read this before the Briefing. It assumes you can write functions in your language of choice, but not that you've done real date arithmetic or test-driven a calculation. You'll build a throwaway library due-date calculator first. This tells you what each piece is for and what to look up, never how to write it. Netting, backward scheduling, working days, and the late flag are the module's.*
+
+#### GF.1 — The picture first
+
+```
+input data ──▶ ┌─────────────────────────┐ ──▶ output data
+               │  PURE FUNCTION           │
+               │  no database, no clock,  │
+               │  no network inside       │
+               └─────────────────────────┘
+                         ▲
+               "today" passed in as an argument
+
+tests: given this input (and this "today"), expect exactly this output
+```
+
+M12's engine is a calculation. Keeping it pure is what makes it testable.
+
+#### GF.2 — Dates, from zero
+
+**Look up:**
+
+- Dates vs datetimes vs timestamps, and why a due date is usually a *date*
+- ISO 8601 format, and why `"2026-10-15"` is a string until you parse it
+- Your language's date library: Python's `datetime.date` and `timedelta`, or Java's `java.time.LocalDate` and its plus/minus methods, or a JavaScript date library (the built-in `Date` is notoriously awkward; look up Temporal and date-fns)
+- Time zones, and why they can shift a date by a day
+
+**Do:** parse a date string, add and subtract days, and find the day of the week.
+
+#### GF.3 — Pure functions
+
+**Look up:** what makes a function pure; side effects; and why calling "now" inside a function makes it impossible to test reliably.
+
+**Question to settle:** if your function needs to know what today is, where should that value come from?
+
+#### GF.4 — The throwaway: due dates
+
+**Build:** a pure function that takes a checkout date, a loan length in days, and today's date, and returns the due date and how many days remain (negative if overdue). Input and output as plain data structures, not printed text.
+
+**Look up:** representing a function's input and output as records, dataclasses, or typed objects, and why plain data is easier to test and to log.
+
+#### GF.5 — Tests first
+
+**Look up:** your language's test runner (pytest, JUnit, Vitest); the arrange-act-assert shape; and writing a test *before* the code it checks.
+
+**Build:** tests for your due-date function: an ordinary loan, a loan crossing a month boundary, one crossing a year boundary, and one already overdue.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Make a loan fall due on a Saturday.** Is that right for a library that's closed on weekends? Your function doesn't know about weekends. That's M12's first decision.
+2. **Your overdue case.** Did the function return a negative number quietly, or tell you something was wrong? What should a system do when the answer is "you're already late"?
+3. **Holidays.** Where would a list of them even come from?
+
+#### GF.7 — Hand-off: what's yours in M12
+
+| Ground Floor left this… | M12 asks you to… |
+|---|---|
+| Adding days forward | Subtract lead time backward from a due date |
+| No inventory | Net gross demand against stock, and decide about inbound orders |
+| Calendar days only | Choose calendar days vs working days |
+| An overdue number returned quietly | Flag late orders explicitly |
+| One item, one level | Decide whether to explode through M11's BOM |
+| A tiny output record | Design an output a planner can audit |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- Why does your function take "today" as an argument instead of reading the clock?
+- How does your date library handle subtracting days across a month boundary?
+- What makes a function pure, and why does M12's engine need to be?
+- Write out, in words, one test you wrote: its input, its "today," and its expected output.
+- What day of the week is 2026-10-15, and how did you find out in code?
+
 ### Briefing
 
 This is the literal heartbeat of a manufacturing system. **MRP** (Material Requirements Planning) answers: given a customer order due on a date, and given how long each material takes to arrive, _when must I order each material_ so everything converges on time? It works _backwards_ through time from the due date, subtracting lead times, while accounting for what you already have in stock. Mastering time-phasing and inventory allocation makes you immediately employable in supply-chain tech, because this logic is the same in a garage and in SAP. The center of gravity is **backward scheduling through time, netted against inventory** — the time thread, run in reverse.
@@ -1287,6 +2490,83 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 
 **Anchors:** _Data & Objects_ (modeling state and behavior); the API contract discipline from Part I.
 
+### Ground Floor — States, transitions, and an endpoint that changes things
+
+*Read this before the Briefing. It assumes you can build an endpoint and a table from earlier Ground Floors, but not that you've modeled something as a state machine. You'll build a throwaway door first: open, closed, locked. This tells you what each piece is for and what to look up, never how to write it. Where rules live, the failure branch, history, and concurrency are the module's.*
+
+#### GF.1 — The picture first
+
+```
+            open()            close()
+   ┌────────────────┐  ┌────────────────┐
+   ▼                │  │                ▼
+ OPEN ──close()──▶ CLOSED ──lock()──▶ LOCKED
+                   ▲                    │
+                   └──────unlock()──────┘
+
+STATES: the boxes      TRANSITIONS: the arrows      EVENTS: the labels
+A state machine is the claim that ONLY these arrows exist.
+```
+
+#### GF.2 — State machines, from zero
+
+**Look up:**
+
+- Finite state machines: states, transitions, events, and the initial state
+- Drawing a state diagram, and why you draw one before writing any code
+- A transition table: rows of current state + event → next state
+- Guards (conditions on a transition) and side effects (actions on a transition)
+
+**Do:** draw the door, then write its transition table on paper. Mark which combinations of state and event have *no* arrow.
+
+#### GF.3 — Enums, in code and in the database
+
+**Look up:** enums in your backend language; Postgres enum types vs a text column with a `CHECK` constraint; and how each behaves when you add a new value later.
+
+**Build:** a `doors` table with a state column, seeded with a few doors.
+
+#### GF.4 — An endpoint that changes state
+
+**Build:** `POST /door/{id}/{event}` that applies an event to a door and returns its new state. Use the simplest code that works.
+
+**Look up:**
+
+- Why changing things uses `POST` (or `PUT`/`PATCH`) and never `GET`
+- Idempotency for HTTP methods: what it means for `GET`, `PUT`, and `POST`
+- Status code 409 Conflict, and when it applies vs 400 or 422
+
+#### GF.5 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Try every event on every state.** Did your code refuse the arrows that don't exist, or quietly allow some? Where did your rules end up living? That's M13's first decision.
+2. **Bypass the endpoint.** Run an `UPDATE` in `psql` that sets a locked door straight to open. What stopped you? Probably nothing.
+3. **Fire two requests at once.** Two terminals, two curls, as close together as you can. Is the outcome always the same?
+4. **Ask "what happened to door 3 yesterday?"** Can your data answer?
+
+Don't fix any of these on the door. They're the module's decisions.
+
+#### GF.6 — Hand-off: what's yours in M13
+
+| Ground Floor left this… | M13 asks you to… |
+|---|---|
+| A door with three states | The given four-state order enum and `move-next` |
+| Rules wherever they ended up | Decide where transition rules live, in one source of truth |
+| Every transition forward-only, no side effects | A failed inspection that rolls back and records rework notes |
+| Only the current state stored | Decide on overwrite vs an appended history |
+| A raw `UPDATE` that can set anything | Decide whether the database enforces states too |
+| Simultaneous requests unguarded | Handle concurrency on one order |
+
+Then read the Briefing below.
+
+#### GF.7 — Check yourself before moving on
+
+- Name the parts of a state machine, using the door.
+- What's the difference between a guard and a side effect on a transition?
+- Postgres enum type or text column with `CHECK`: what happens when you need a fifth state?
+- Why must a state change never be a `GET`?
+- What did your two simultaneous requests do?
+
 ### Briefing
 
 A **manufacturing execution system** (MES) tracks a production order as it moves down a digital assembly line, and its whole job is _preventing human error_ by refusing illegal moves. An order goes `KITTING → ASSEMBLY → INSPECTION → READY`, and the software's value is that it will not let an operator skip inspection or ship something that failed. This is a **state machine**: a set of allowed states and strictly-enforced rules about which transitions are legal. Mapping physical, real-world boundaries into backend validation logic is the core skill of all shop-floor software. The center of gravity is **encoding rules as enforced state transitions**, not suggestions.
@@ -1375,6 +2655,87 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 > - Missing and out-of-order pings are handled by a decision you made, not ignored.
 
 **Anchors:** _Waiting, All the Way Up_ (streams and the event loop); _Where the Data Lives_ (time-series storage, OLTP vs OLAP).
+
+### Ground Floor — Data that keeps arriving
+
+*Read this before the Briefing. It assumes you can build an endpoint and a table, but not that you've built a process that sends data forever or queried over a moving window of time. You'll build a throwaway thermometer first. This tells you what each piece is for and what to look up, never how to write it. Time-weighting, gaps, out-of-order data, storage strategy, and load are the module's.*
+
+#### GF.1 — The picture first
+
+```
+simulator (a loop)                  ingestion endpoint           log table
+──────────────────                  ──────────────────           ─────────
+every ~2s:                          POST /readings               append one row
+  build { sensor, value, ts }  ──▶    validate              ──▶  (sensor, value, ts)
+  POST it                             insert                     ...forever
+  sleep
+
+query: "average over the last 5 minutes"  =  only rows newer than (now − 5 minutes)
+                                                                        ▲
+                                                        the window moves every second
+```
+
+Two programs, running at the same time, that never finish. Plus a question whose answer changes every time you ask it.
+
+#### GF.2 — A program that never stops
+
+**Look up:**
+
+- Loops with a sleep in your language (`time.sleep` in Python, `setInterval` or an async loop in Node)
+- Sending a POST from code (`requests` or `httpx`, or `fetch` in Node)
+- Handling a failed request inside a loop so one error doesn't kill the whole process
+- Stopping a long-running process cleanly with Ctrl-C (signal handling)
+
+**Build:** a simulator that posts a fake temperature reading every couple of seconds, with some random variation.
+
+#### GF.3 — The ingestion endpoint
+
+**Build:** an endpoint that accepts a reading and appends it to a `readings` table. Reuse whichever framework you built earlier.
+
+**Look up:** `timestamptz` in Postgres (M2's Ground Floor touched it); `INSERT` as an append-only pattern; and returning 201 Created vs 200 OK vs 202 Accepted.
+
+#### GF.4 — Asking about a window of time
+
+**Look up:**
+
+- Postgres interval arithmetic: `now() - interval '5 minutes'`
+- Aggregates over a filtered range: `count`, `avg`, `min`, `max`
+- `GROUP BY` a time bucket, for example per minute (`date_trunc`)
+- What a time-series database is (TimescaleDB, InfluxDB) and why they exist. Park the details; M14 uses Postgres.
+
+**Build:** a query, or an endpoint wrapping one, that returns the average temperature over the last five minutes. Run it several times a few seconds apart.
+
+#### GF.5 — Run it and observe
+
+Leave the simulator running for at least ten minutes before you start.
+
+**Notice and leave alone:**
+
+1. **Stop the simulator for two minutes, then restart it.** Run your window query during the gap and after. What did it say about the minutes where nothing arrived? Was that true, false, or unknown? That's M14's second decision.
+2. **Look at the timestamp in each payload, and at when each row was inserted.** Are those the same time? Could they ever be in a different order? That's M14's fifth decision.
+3. **Imagine a reading that held steady for an hour but was only sent twice.** What would counting readings say? That's M14's first decision.
+4. **Count your rows after ten minutes.** Multiply by a thousand sensors and a month. That's the storage decision.
+
+#### GF.6 — Hand-off: what's yours in M14
+
+| Ground Floor left this… | M14 asks you to… |
+|---|---|
+| A thermometer posting numbers | The given machine-status simulator posting RUNNING/STOPPED |
+| An average over a window | Availability, and a choice between ping-count and time-weighted |
+| A gap noticed | Decide what a gap means and handle it |
+| Two timestamps noticed | Decide between arrival time and event time |
+| Raw rows, aggregated on read | Choose raw log vs pre-aggregation |
+| One insert per reading | Decide how ingestion holds up under load |
+
+Then read the Briefing below.
+
+#### GF.7 — Check yourself before moving on
+
+- How does your simulator survive one failed POST without stopping?
+- Describe, in words, how your query selects only the last five minutes.
+- What does `date_trunc` do, and why would you group by it?
+- What did your window query report during the two minutes nothing arrived?
+- Why might a payload's timestamp and its insertion time disagree?
 
 ### Briefing
 
@@ -1470,6 +2831,95 @@ _Three modules where the browser stops being a form-renderer and becomes a mediu
 
 **Anchors:** _Pixels With Intent_ (the browser rendering and layout material); the function-first React/TypeScript guide for the component structure.
 
+### Ground Floor — How CSS decides where things go
+
+*Read this before the Briefing. It assumes you've written CSS that mostly worked, but not that you can explain why a layout does what it does. You'll lay out a throwaway recipe page first. This tells you what each piece is for and what to look up, never how to write it. Intrinsic tracks, cross-card alignment, the responsive strategy, and image handling are the module's.*
+
+#### GF.1 — The picture first
+
+```
+Every element is a BOX:   margin ▸ border ▸ padding ▸ content
+
+The browser places boxes by:
+  1. normal flow       (blocks stack down, inline things run across)
+  2. unless a parent says otherwise:
+       display: flex   → children laid out along ONE axis
+       display: grid   → children placed on ROWS × COLUMNS you define
+  3. sizes come from two places:
+       what you SET          width: 300px
+       what the CONTENT asks  "I'm this long; wrap me"
+```
+
+Most layout bugs are those two sources of size disagreeing.
+
+#### GF.2 — The box and the flow
+
+**Look up:** *Pixels With Intent*, the layout chapters. Then fill gaps on:
+
+- The box model, and `box-sizing: border-box` vs the default
+- Block vs inline vs inline-block
+- Units: `px`, `rem`, `%`, `vw`, `ch`
+- What happens to content that doesn't fit its box (`overflow`)
+
+**Do:** in DevTools, select any element on any site and read its box model diagram.
+
+#### GF.3 — Flexbox, the first hour
+
+**Look up:** main axis vs cross axis; `justify-content`, `align-items`, `gap`, `flex-wrap`; and `flex-grow`, `flex-shrink`, `flex-basis`, what each does on its own.
+
+**Do:** a row of three recipe tags that wraps onto two lines when narrow.
+
+#### GF.4 — Grid, the first hour
+
+**Look up:**
+
+- `grid-template-columns` and `grid-template-rows`, and the `fr` unit
+- `gap`; placing an item by line numbers; spanning several columns
+- Named areas with `grid-template-areas`
+- The DevTools grid overlay, which shows the lines and tracks you've made
+
+**Build:** a throwaway recipe page: a large hero recipe spanning several columns, plus six smaller recipe cards on a grid below it. Give each card an image, a title, and a description.
+
+#### GF.5 — Breakpoints
+
+**Look up:** media queries; mobile-first (`min-width`) vs desktop-first (`max-width`); and the viewport meta tag, without which phones lie about their width.
+
+**Build:** two layouts for your recipe page: a multi-column one for wide screens and a single column for narrow ones.
+
+#### GF.6 — Run it and observe
+
+Turn on the grid overlay, then resize the window slowly from wide to narrow.
+
+**Notice and leave alone:**
+
+1. **Make one card's description five times longer than the others.** What happened to its row, and to the cards beside it? Do the image tops and titles still line up across cards?
+2. **If you gave anything a fixed height,** add more text to it. What did the text do?
+3. **Find the width just before your breakpoint kicks in.** Does anything overflow or squash there?
+4. **Look at your images.** Did any stretch or squash as the cards changed shape?
+
+Each of these is one of M15's decisions. Don't fix them on the recipe page.
+
+#### GF.7 — Hand-off: what's yours in M15
+
+| Ground Floor left this… | M15 asks you to… |
+|---|---|
+| Grid and Flexbox tried separately | Decide which does what, and where mixing helps |
+| Whatever column sizes you set | Choose fixed vs intrinsic track sizing |
+| Cards whose insides don't line up | Align content across cards, despite different lengths |
+| Two hand-picked breakpoints | Choose a responsive strategy, maybe with no breakpoints at all |
+| Images that may distort | Handle images without distortion, and decide on crops |
+| A recipe page | A magazine-grade front page, designed in Figma first |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- Draw the box model, and say what `border-box` changes.
+- Flexbox or Grid: which lays out along one axis, and which along two?
+- What does `1fr` mean, and what is it a fraction *of*?
+- Why does a phone ignore your media queries without the viewport meta tag?
+- What happened to the row containing your extra-long card?
+
 ### Briefing
 
 An editorial homepage — think a serious newspaper front page — is one of the genuinely hard layout problems, and it's hard for a reason that reveals what CSS layout _is_. You have a lead story, a cluster of secondary stories, mixed blocks of image and text, all of _different natural sizes_ — and they must nonetheless lock to a coherent visual grid, then reflow gracefully from a five-column desktop masthead to a single mobile column. The center of gravity is **CSS Grid and intrinsic sizing**: two-dimensional layout, and the difference between a size you _set_ and a size the content _decides_. Get this and most "how do I lay this out" questions dissolve.
@@ -1556,6 +3006,102 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 > - pretext's line breaks match the browser's for the same text and font; emoji and non-Latin input don't corrupt layout.
 
 **Anchors:** _Pixels With Intent_ (its rendering-pipeline and reflow material is the exact backdrop for this module; its Part 7 paper-build of a layered card stack is the spirit of "derive the layout yourself"). Library: **pretext** — `github.com/chenglou/pretext`.
+
+### Ground Floor — What the browser does to draw text
+
+*Read this before the Briefing. It assumes you can write JavaScript but haven't studied the rendering pipeline or drawn text yourself. You'll break a paragraph into lines by hand on a canvas first, so pretext has something to replace. This tells you what each piece is for and what to look up, never how to write it. The hero effect, the font sync, and prepare vs layout are the module's.*
+
+#### GF.1 — The picture first
+
+```
+The browser, every time the page changes:
+  DOM + CSS ─▶ STYLE ─▶ LAYOUT (reflow) ─▶ PAINT ─▶ COMPOSITE ─▶ pixels
+                          ▲
+           reading offsetHeight here can force this whole step to run NOW
+
+Doing it yourself on a canvas:
+  text ─▶ split into pieces ─▶ MEASURE each piece's width ─▶ decide line breaks ─▶ draw each line
+                                       ▲
+                          the canvas can measure without a reflow
+```
+
+pretext does the second row for you, carefully. This Ground Floor has you do a rough version first.
+
+#### GF.2 — The rendering pipeline
+
+**Look up:** *Pixels With Intent*, its rendering-pipeline and reflow material. Then make sure you can explain:
+
+- Style, layout, paint, and composite, and what triggers each
+- Forced synchronous layout (layout thrashing): reading a geometry property right after changing the DOM
+- The DevTools Performance panel, and how to spot a layout event in a recording
+
+**Do:** in a scratch page, change an element's text and read its `offsetHeight` in a loop. Record it in the Performance panel and find the layout work.
+
+#### GF.3 — Canvas 2D, the first hour
+
+**Look up:**
+
+- Getting a 2D context from a `<canvas>`
+- `fillText` and the `font` property, and how the font string's syntax mirrors CSS shorthand
+- `measureText`, and what's in the object it returns
+- Device pixel ratio, and why canvas text looks blurry on a retina screen until you scale it
+
+**Do:** draw one line of text on a canvas, sharp on your screen.
+
+#### GF.4 — Line-breaking by hand
+
+**Build:** a function that takes a paragraph and a maximum width, splits it into words, measures each with `measureText`, and draws as many words per line as fit. It only has to be rough.
+
+**Look up:** greedy line breaking, and that better algorithms exist (Knuth–Plass, used by TeX). Park the latter.
+
+**Question to settle:** how many times did you call `measureText` for one paragraph? What would that be on every resize?
+
+#### GF.5 — Text isn't characters
+
+**Look up:**
+
+- Code points, UTF-16 code units, and graphemes, and why `"👍🏽".length` isn't 1
+- `Intl.Segmenter` for splitting by grapheme and by word
+- Why some scripts don't put spaces between words, and what that does to "split on spaces"
+- Right-to-left text, as a concept only
+
+**Do:** print the `.length` and the grapheme count for a few strings: an emoji with a skin tone, a family emoji, an accented letter, an Arabic word.
+
+#### GF.6 — pretext, by its own README only
+
+**Do:** install pretext and read its README's API section. Don't read anyone's demo source. That's the module's rule too.
+
+**Look up:** what `prepare` takes and returns, what `layout` takes and returns, and which of the two the README says is expensive.
+
+#### GF.7 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Put the same paragraph in a normal DOM element** next to your canvas version, at the same width. Do the line breaks match?
+2. **Change the CSS font on the DOM paragraph without changing the canvas font string,** or the other way round. What happens to the match? That's M16's trap.
+3. **Feed your hand-built breaker an emoji-heavy sentence and an Arabic one.** What broke?
+4. **Resize repeatedly.** What does your hand-built version redo every time? pretext's split between `prepare` and `layout` is about exactly that.
+
+#### GF.8 — Hand-off: what's yours in M16
+
+| Ground Floor left this… | M16 asks you to… |
+|---|---|
+| A rough greedy breaker | Use pretext, picking the API tier your effect needs |
+| A plain rectangle of text | Build one hero effect the DOM can't do gracefully |
+| Two font strings that can drift apart | Keep measure and render on one source of truth |
+| Everything recomputed on resize | Prepare once; rerun only the cheap layout |
+| Emoji and Arabic breaking things | Handle graphemes correctly |
+| Canvas, by default | Choose a render target, and handle accessibility |
+
+Then read the Briefing below.
+
+#### GF.9 — Check yourself before moving on
+
+- Name the pipeline stages, and which one reading `offsetHeight` can force.
+- What does `measureText` return, and why doesn't calling it trigger a reflow?
+- Why is `"👍🏽".length` not 1, and what does `Intl.Segmenter` give you instead?
+- Did your canvas breaks match the DOM's? Where didn't they, and why?
+- According to the README, which pretext step is expensive?
 
 ### Briefing
 
@@ -1651,6 +3197,98 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 
 **Anchors:** _Waiting, All the Way Up_ (the `requestAnimationFrame` heartbeat is the same event-loop idea); _Pixels With Intent_ (the GPU/compositing material). Library: Three.js (with React Three Fiber if you choose — you have prior reps there).
 
+### Ground Floor — A scene, a camera, a loop
+
+*Read this before the Briefing. It assumes you know JavaScript and maybe a little React Three Fiber, but not that you can explain the render loop or measure a frame. You'll build a throwaway spinning shape you can push with the pointer first. This tells you what each piece is for and what to look up, never how to write it. The per-frame discipline, the animation driver, budgets, fallbacks, and disposal are the module's.*
+
+#### GF.1 — The picture first
+
+```
+Set up once:   renderer (owns the <canvas> and the WebGL context)
+               scene  ──contains──▶ mesh = geometry (shape) + material (surface)
+                                    light(s)
+               camera (where you look from)
+
+Every frame (requestAnimationFrame, ~60×/s → 16.7 ms budget):
+   read input ─▶ update positions/rotations ─▶ renderer.render(scene, camera)
+                                                       │
+                                     CPU sends draw calls ─▶ GPU draws pixels
+```
+
+#### GF.2 — The GPU and WebGL, as concepts
+
+**Look up:**
+
+- What a GPU is good at, and why the CPU has to send it work in batches
+- What WebGL is: the browser's API to the GPU; vertices and fragments, as ideas only
+- What a draw call is, and why counting them matters
+- What Three.js adds on top of raw WebGL
+
+#### GF.3 — The scene graph
+
+**Look up:** Three.js's own "Creating a scene" guide; then `Scene`, `PerspectiveCamera`, `WebGLRenderer`, `Mesh`, a basic geometry, two kinds of material (one that needs lights and one that doesn't), and one or two light types.
+
+**Build:** a single shape, lit, on screen, filling the window.
+
+#### GF.4 — The loop
+
+**Look up:**
+
+- `requestAnimationFrame`: when the browser calls it, and what it does when the tab is hidden
+- *Waiting, All the Way Up*, on how this fits the event loop
+- Three.js's clock or timer utilities, and what "delta time" means
+
+**Build:** make the shape rotate continuously.
+
+#### GF.5 — Input
+
+**Look up:** pointer events (`pointermove`, `pointerdown`); converting pointer coordinates to the -1 to 1 range Three.js uses; scroll position as an input; and handling a window resize (camera aspect and renderer size).
+
+**Build:** make the shape tilt toward the pointer.
+
+#### GF.6 — Measuring a frame
+
+**Look up:**
+
+- The DevTools Performance panel and its frames track
+- The FPS meter or rendering stats overlay in DevTools
+- `stats.js`, the small FPS panel Three.js examples use
+- `renderer.info`, and what it reports about draw calls, geometries, and textures
+
+**Do:** show live FPS and draw calls while your shape moves.
+
+#### GF.7 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Add fifty copies of your shape.** Watch FPS and the draw-call count. That's M17's budget decision.
+2. **Throttle your CPU** in the Performance panel (4× or 6× slowdown). Does your rotation slow down, or stay the same speed and get choppier? That's the animation-driver decision.
+3. **If you're using React, mount and unmount the scene twenty times.** Watch `renderer.info` and the memory panel. Does anything climb? That's the resource-lifecycle decision.
+4. **Turn on reduced motion in your OS settings,** or disable WebGL in your browser. What does your page show?
+5. **Look at what your loop creates each frame.** Is anything constructed with `new` inside it? Don't change it; just know.
+
+#### GF.8 — Hand-off: what's yours in M17
+
+| Ground Floor left this… | M17 asks you to… |
+|---|---|
+| A tilting shape | One award-tier interaction, referenced in Figma first |
+| Raw Three.js or R3F, whichever you grabbed | Choose, with the render loop in mind |
+| A loop that may allocate | Decide what runs per frame and what runs once |
+| Whatever drove your rotation | Choose an animation driver that survives frame drops |
+| FPS and draw calls watched | Set and hold a performance budget |
+| Whatever reduced-motion showed | Degrade gracefully |
+| Memory you watched, maybe climbing | Dispose resources on teardown |
+
+Then read the Briefing below.
+
+#### GF.9 — Check yourself before moving on
+
+- Name every object in your scene and what each is responsible for.
+- What is a draw call, and how many did your fifty shapes cost?
+- When does `requestAnimationFrame` call your function, and what happens when the tab is hidden?
+- What did CPU throttling do to your rotation, and what does that tell you about how you drove it?
+- What did your page show with reduced motion on?
+
 ### Briefing
 
 The interactive 3D pieces that win awards look like magic and are, underneath, a tight loop and a strict performance budget. Three.js is the library that wraps WebGL — the browser's door to the GPU — into a workable **scene graph**: a `scene` holds `mesh`es (shapes) with `material`s (surfaces) lit by `light`s, viewed through a `camera`, drawn by a `renderer` — sixty times a second. Building one award-tier _interaction_ (not a whole site — a hero element, a scroll-driven effect, a responsive 3D object) teaches the two things that separate a portfolio piece from a laptop-melting embarrassment. The center of gravity is **the render loop and the performance floor**: what runs every frame, and what the GPU will and won't do in 16.7 milliseconds.
@@ -1745,6 +3383,93 @@ _Two modules on the floor everything else stands on. A memory allocator in C, wh
 
 **Anchors:** _The Machine Under Everything_ (this is the module that book exists to make legible); your `CURRICULUM_C_RUST.md` and the dynamic-array lesson you already have compiling (`dyn_array`).
 
+### Ground Floor — Pointers, the heap, and a checker
+
+*Read this before the Briefing. It assumes you've written some C (the `dyn_array` lesson counts) but not that you can predict where a value lives or prove a program clean. You'll write small throwaway programs that make each region of memory, and each of the four famous bugs, visible. This tells you what each piece is for and what to look up, never how to write it. The arena, its ownership model, growth, failure policy, and alignment are the module's.*
+
+#### GF.1 — The picture first
+
+```
+A running C program's memory (simplified, addresses grow ↑):
+
+  ┌──────────────┐  high
+  │    STACK     │  local variables; one frame per function call;
+  │      ↓       │  gone when the function returns
+  │              │
+  │      ↑       │
+  │    HEAP      │  malloc'd blocks; live until YOU free them
+  ├──────────────┤
+  │ globals/data │
+  │    code      │  low
+  └──────────────┘
+
+A pointer is just a number: the address of something in one of these regions.
+```
+
+#### GF.2 — Compiling so the compiler helps
+
+**Look up:** `gcc` or `clang` flags `-Wall -Wextra -g`; what each does; and `-fsanitize=address` (AddressSanitizer). Make warnings-as-errors your default for this module.
+
+**Do:** compile a scratch file that uses an uninitialized variable, once without the flags and once with them. Read the difference.
+
+#### GF.3 — Pointers, from zero
+
+**Look up:** *The Machine Under Everything*, its pointer and memory chapters. Then confirm:
+
+- `&` (address-of) and `*` (dereference), and pointer types
+- Pointer arithmetic: why `p + 1` moves by `sizeof(*p)` bytes, not one
+- `sizeof` on a type, on an array, and on a pointer, and why the last two differ
+- Arrays decaying to pointers when passed to a function
+- `NULL`, and what dereferencing it does
+
+**Do:** print the addresses of a local variable, a global, and a `malloc`'d block. Which region is each in?
+
+#### GF.4 — The heap by hand
+
+**Look up:** `malloc`, `calloc`, `realloc`, and `free`: what each takes, what each returns, and what each guarantees about the contents of the memory.
+
+**Do:** revisit your `dyn_array`. For every allocation in it, write a comment naming what frees it and when. Notice whether any answer was hard to give.
+
+#### GF.5 — The checker
+
+**Look up:** Valgrind's memcheck: running a program under it, reading "definitely lost" vs "still reachable," and reading an invalid-read report back to a line of source. Then AddressSanitizer as the faster alternative.
+
+**Do:** run your `dyn_array` test under both. Get it clean before moving on.
+
+#### GF.6 — Meet the four bugs on purpose
+
+**Build:** four tiny throwaway programs, one per bug: a leak, a use-after-free, a double free, and a write one byte past a block's end. Each should look like it works when you run it normally.
+
+**Then:** run each under Valgrind and under AddressSanitizer. For each, write one line: what the checker said, and on which line it pointed.
+
+**Notice and leave alone:**
+
+1. **Which bugs "worked" without the checker?** That's M18's trap: passing a casual test run.
+2. **Call `realloc` on a block while another pointer points into it.** Print both addresses before and after. Did the block move? That's M18's third decision.
+3. **Ask `malloc` for something absurd,** like most of your address space. What came back? That's the failure-policy decision.
+4. **Allocate a `char`, then a `double`, then a `char`** and print their addresses. Notice any gaps? That's alignment, the fifth decision.
+
+#### GF.7 — Hand-off: what's yours in M18
+
+| Ground Floor left this… | M18 asks you to… |
+|---|---|
+| Individual `malloc`/`free` calls | Decide whether an arena or a pool fits, and build one |
+| Ownership comments on `dyn_array` | Design an ownership model with exactly one owner per allocation |
+| A `realloc` that may have moved | Decide fixed capacity vs growth, and handle moved memory |
+| A `NULL` you saw and didn't handle | Choose an allocation-failure policy |
+| Gaps between addresses noticed | Respect alignment when carving memory |
+| Four toy bugs, each caught | Zero leaks and zero errors on every path, including failure paths |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- Where does a local variable live, where does a `malloc`'d block live, and when does each die?
+- Why does `p + 1` on an `int *` move by more than one byte?
+- What's the difference between Valgrind's "definitely lost" and "still reachable"?
+- Name the four bugs. For each, did it crash on a normal run?
+- What did `realloc` do to the address in your experiment?
+
 ### Briefing
 
 In JavaScript and Python, memory is invisible: you make objects, they vanish when unneeded, and a garbage collector you never see does the bookkeeping. C removes the collector and hands _you_ the ledger. Memory comes in two regions: the **stack** (automatic, scoped, freed when a function returns — fast and safe but rigid) and the **heap** (manual, via `malloc`/`free` — flexible but entirely your responsibility). Building a small **allocator** — a program that manages heap memory itself — is the most direct way to _see_ the model that everything higher up is hiding. The center of gravity is exactly this: **the stack/heap distinction, pointers, lifetime, and ownership** — who is responsible for freeing what, and when.
@@ -1831,6 +3556,86 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 > - valgrind-clean over a full play session.
 
 **Anchors:** _The Machine Under Everything_ (memory and the machine); _Waiting, All the Way Up_ (the loop-that-never-stops idea, shared with M14 and M17).
+
+### Ground Floor — The terminal as a screen
+
+*Read this before the Briefing. It assumes M18's Ground Floor, so you can compile C and run Valgrind, but not that you've drawn to a terminal or run a loop on a clock. You'll animate a throwaway dot first, with no input. This tells you what each piece is for and what to look up, never how to write it. Non-blocking input, the rendering strategy, pacing, and state design are the module's.*
+
+#### GF.1 — The picture first
+
+```
+forever:
+   ┌──────────────┐
+   │ read input   │   ← how do you check for a key WITHOUT waiting for one?
+   ├──────────────┤
+   │ update world │   move things, check collisions, apply rules
+   ├──────────────┤
+   │ draw world   │   the terminal REMEMBERS what you drew last time
+   ├──────────────┤
+   │ wait a bit   │   ← how long, and measured how?
+   └──────────────┘
+```
+
+#### GF.2 — Optional: the rules in Scratch first
+
+If you'd like to de-risk the game's *logic* before the C machinery, build its rules in Scratch: movement, the win or lose condition, the score. Whether to do this is M19's first decision. Look up Scratch's broadcast messages and its "forever" loop, and notice how much it hides.
+
+#### GF.3 — What a terminal is
+
+**Look up:**
+
+- stdin, stdout, stderr, and buffering: why `printf` output sometimes doesn't appear until a newline, and what `fflush` does
+- ANSI escape sequences: clearing the screen, moving the cursor to a row and column, hiding and showing the cursor, colors
+- Terminal size, and how a program can ask for it
+
+**Do:** write a program that clears the screen, prints a character at row 10, column 20, and moves the cursor out of the way.
+
+#### GF.4 — Time in C
+
+**Look up:**
+
+- `sleep`, `usleep`, and `nanosleep`, and which are deprecated
+- `clock_gettime` with `CLOCK_MONOTONIC`, and why a wall clock is the wrong thing to time a game with
+- Computing elapsed milliseconds between two readings
+
+**Do:** time how long a loop of a million additions takes.
+
+#### GF.5 — A dot that moves on its own
+
+**Build:** a throwaway program that moves a single character across the screen, bouncing off the edges, forever, with a short sleep between frames. No input yet.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Is there flicker, or leftover characters where the dot used to be?** How you clear and redraw is M19's third decision.
+2. **Run it on a faster and a slower terminal,** or change the work done per frame. Does the dot's speed change? That's frame pacing, the fourth decision.
+3. **Now add a `getchar()` inside the loop** so a key changes direction. What happens to the dot while you're not pressing anything? That's M19's trap. Look up canonical vs non-canonical terminal mode and `termios`, but don't fix the loop.
+4. **Press Ctrl-C.** What state did you leave your terminal in? Is the cursor still hidden?
+5. **Where does the dot's position live?** In a global, a local, a struct? That's the state decision.
+
+#### GF.7 — Hand-off: what's yours in M19
+
+| Ground Floor left this… | M19 asks you to… |
+|---|---|
+| A dot | A small playable game: Snake, a falling-block puzzle, a dodger |
+| Rules prototyped in Scratch, or not | Decide Scratch-first vs straight to C |
+| `getchar` freezing the loop | Read input without blocking, in raw mode |
+| Whatever clearing you did | Choose a rendering strategy with no flicker |
+| A fixed sleep | Pace frames so the game feels the same everywhere |
+| Position wherever it landed | Represent world state with clear ownership |
+| A terminal left messy on exit | Restore it cleanly |
+| No heap use yet | Valgrind-clean over a full session |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- Why might `printf` output not appear right away, and what forces it out?
+- What escape sequence moves the cursor, and what does "the terminal remembers" mean for your next frame?
+- Why time a game with a monotonic clock instead of the wall clock?
+- What did `getchar` do to your loop, and what's canonical mode?
+- What state was your terminal in after Ctrl-C?
 
 ### Briefing
 
@@ -1925,6 +3730,91 @@ _Six standalones, each a distinct territory a job description might demand. They
 
 **Anchors:** the DSA docs (`DATA_STRUCTURES___ALGORITHMS.md`, `leetcode_thinking_toolbox.md`); the tree thread from M11.
 
+### Ground Floor — Tokens, trees, and sets
+
+*Read this before the Briefing. It assumes M11's Ground Floor, so recursion over a tree is familiar, but not that you've turned text into a tree. You'll tokenize a throwaway arithmetic expression and evaluate a tree you build by hand first. This tells you what each piece is for and what to look up, never how to write it. The parser itself, precedence, the AST design, evaluation strategy, and errors are the module's.*
+
+#### GF.1 — The picture first
+
+```
+"3 + 4 * (2 - 1)"
+       │  TOKENIZE   (characters → meaningful pieces)
+       ▼
+[NUM 3] [PLUS] [NUM 4] [STAR] [LPAREN] [NUM 2] [MINUS] [NUM 1] [RPAREN]
+       │  PARSE      (flat pieces → a tree that encodes structure)
+       ▼
+          +
+        /   \
+       3     *
+            / \
+           4   -
+              / \
+             2   1
+       │  EVALUATE   (walk the tree)
+       ▼
+       7
+```
+
+Arithmetic is the practice ground because you already know what the right answer is. M20 swaps in `AND`, `OR`, and `NOT`.
+
+#### GF.2 — Tokenizing
+
+**Look up:** what a token and a lexer are; the token kinds you'd need for arithmetic (number, operator, parenthesis); and how to handle whitespace and multi-character numbers.
+
+**Build:** a tokenizer that turns an arithmetic string into a list of tokens and prints them. Reject a character it doesn't recognize, saying where it was.
+
+#### GF.3 — Grammars, as notation
+
+**Look up:** BNF / EBNF notation; reading a small grammar for arithmetic expressions; and what "terminal" and "non-terminal" mean in one.
+
+**Do:** read an arithmetic grammar in EBNF and say in words what each rule allows.
+
+Don't write a grammar for M20's queries yet. Defining it, with its precedence, is the module's second decision.
+
+#### GF.4 — Trees as data
+
+**Look up:** what an abstract syntax tree is, and how it differs from the token list; and how to represent a tree node in your language (a class, a record, a tagged union).
+
+**Build:** construct the tree in GF.1 *by hand*, node by node in code, with no parsing. Write a recursive function that evaluates it.
+
+#### GF.5 — Sets
+
+**Look up:** your language's set type; union, intersection, and difference; and which boolean operator each one corresponds to when the values are "documents that match."
+
+**Do:** make three small sets of document ids and compute a few combinations by hand in code.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Draw two different trees for `3 + 4 * 2`.** Evaluate both. Which one is "right," and what decided that? That's M20's trap.
+2. **Draw the tree for `(3 + 4) * 2`.** What did the parentheses change about the tree's shape?
+3. **Try splitting `3 + 4 * 2` on spaces and evaluating left to right.** What answer do you get?
+4. **Feed your tokenizer `3 + (4 * 2`** (no closing parenthesis). Did it notice? Should it have? Which stage *should* catch this?
+
+You've now seen both halves of a parser: the input (tokens) and the output (a tree). Getting from one to the other is the module.
+
+#### GF.7 — Hand-off: what's yours in M20
+
+| Ground Floor left this… | M20 asks you to… |
+|---|---|
+| An arithmetic tokenizer | Tokenize queries, including quoted phrases |
+| A tree built by hand | Write the parser, and choose its technique |
+| Precedence argued on paper | Define a grammar with explicit precedence |
+| Whatever node type you used | Design the AST nodes |
+| A tree evaluated once | Choose an evaluation strategy for many documents |
+| An unclosed paren nobody caught | Detect and report malformed queries precisely |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What's the difference between the token list and the tree?
+- In EBNF, what's a non-terminal? Give one from the arithmetic grammar you read.
+- What was the base case in your tree evaluator?
+- Which set operation is `AND`, which is `OR`, and what does `NOT` need to be meaningful?
+- Why does splitting on spaces get `3 + 4 * 2` wrong?
+
 ### Briefing
 
 A real search box understands more than words: `(cat OR dog) AND NOT fish`, `"exact phrase" OR bird`. Turning that flat string into something a computer can _evaluate_ is a compact, beautiful version of what every programming language does to your source code. It runs in three stages: **tokenize** (split the string into meaningful pieces — words, operators, parens), **parse** (arrange those tokens into a tree that captures structure and precedence), **evaluate** (walk the tree to decide what matches). The center of gravity is **turning flat text into a tree and walking it** — the same move as the BOM (M11) and the filesystem walk (M25), which is why it's here.
@@ -2012,6 +3902,89 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 
 **Anchors:** the data-visualization instincts from your React/TypeScript work; general data-handling from the data books.
 
+### Ground Floor — Coordinates, GeoJSON, and a first map
+
+*Read this before the Briefing. It assumes you can build a React page, but not that you've worked with geographic data. You'll put a handful of throwaway points on a map first. This tells you what each piece is for and what to look up, never how to write it. Library choice, raster vs vector, scale, projection-aware measurement, and coordinate-order discipline are the module's.*
+
+#### GF.1 — The picture first
+
+```
+A place on Earth:        (latitude, longitude) in degrees on a sphere
+        │
+        │  PROJECTION    sphere → flat plane (always distorts something)
+        ▼
+A place on the plane:    (x, y) in meters, or some other unit
+        │
+        │  ZOOM + PAN    plane → this screen right now
+        ▼
+A place on screen:       (px, py)
+
+Background: TILES — a grid of square images (or vector chunks) per zoom level
+On top:     YOUR DATA — GeoJSON points, lines, polygons
+```
+
+#### GF.2 — Latitude and longitude, from zero
+
+**Look up:**
+
+- Latitude vs longitude: which runs north–south, the ranges of each, and what the signs mean
+- Decimal degrees vs degrees-minutes-seconds
+- A coordinate reference system (CRS), and the code EPSG:4326 (WGS 84)
+
+**Do:** look up the coordinates of three places you know, Philadelphia among them, and say which number is latitude and which is longitude.
+
+#### GF.3 — GeoJSON
+
+**Look up:** the GeoJSON spec (RFC 7946): `Feature`, `FeatureCollection`, geometry types (`Point`, `LineString`, `Polygon`), the `properties` object, and **the order it puts coordinates in**.
+
+**Do:** hand-write a tiny GeoJSON file with three points and one polygon, and paste it into geojson.io to see it drawn.
+
+#### GF.4 — Tiles and projections, as ideas
+
+**Look up:**
+
+- Slippy maps: zoom levels and the `z/x/y` tile scheme
+- Raster tiles vs vector tiles, as concepts only. Choosing between them is M21's second decision.
+- Web Mercator (EPSG:3857): why nearly every web map uses it, and what it does to shapes and areas near the poles
+- Tile providers and their usage terms. OpenStreetMap's tile policy forbids heavy use of its own servers.
+
+**Do:** visit a "true size" comparison site and drag Greenland to the equator.
+
+#### GF.5 — A first map
+
+**Build:** a React page with a map centered on Philadelphia, a basemap, and your three hand-written points shown from your GeoJSON file. Clicking a point should show its name from `properties`.
+
+**Look up:** whichever library gets you there fastest (Leaflet with react-leaflet is the gentlest start); its map, tile layer, and GeoJSON layer; and how it wants you to pass coordinates. Don't treat this as M21's library decision. That comes later, with real data.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Swap latitude and longitude** for one of your points. Where did it land? Did anything warn you? Compare the order GeoJSON uses with the order your library's own functions take. That's M21's trap.
+2. **Generate a few thousand random points** in a box around the city and load them. Pan and zoom. How does it feel? That's the scale decision.
+3. **Measure the screen distance between two points** at different latitudes, at the same zoom. Would those pixel distances mean the same real-world distance? That's projection awareness.
+
+#### GF.7 — Hand-off: what's yours in M21
+
+| Ground Floor left this… | M21 asks you to… |
+|---|---|
+| Whichever library was quickest | Choose a mapping library for real needs |
+| The default basemap | Choose raster or vector rendering |
+| A few thousand random points, maybe laggy | Stay responsive at non-trivial feature counts |
+| Pixel distances that lie | Account for projection in any measurement |
+| A swapped coordinate that landed somewhere wrong | Verify coordinate order up front and convert in one place |
+| Three hand-written points | A real GeoJSON dataset |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What does latitude measure, and what's its range?
+- In GeoJSON, which comes first in a coordinate pair?
+- What's a CRS, and what are EPSG:4326 and EPSG:3857?
+- Why does Greenland look huge on most web maps?
+- What happened when you swapped one point's coordinates?
+
 ### Briefing
 
 Geographic data is everywhere — deliveries, sensors, incidents, users — and putting it on a map is a distinct skill with one big conceptual hurdle: **the Earth is round and your screen is flat.** A GIS (geographic information system) map has to take positions on a sphere (latitude/longitude) and _project_ them onto flat pixels, which is a lossy, choice-laden transformation. Build an interactive map that plots real geographic data, and you learn coordinate systems, projections, and the standard data format (GeoJSON) that the whole ecosystem speaks. The center of gravity is **coordinate systems and projection** — turning where-on-Earth into where-on-screen.
@@ -2088,6 +4061,95 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 > - Every state-changing action is nonce-protected and capability-checked.
 
 **Anchors:** the security material from M4 and your Security+ track; the protective-vs-extractive-friction framework (relevant to how you scope client work).
+
+### Ground Floor — WordPress and PHP, from the inside
+
+*Read this before the Briefing. It assumes you know web development but not PHP, and not how WordPress runs code. You'll install WordPress locally and write a throwaway plugin that does one harmless thing first. This tells you what each piece is for and what to look up, never how to write it. Packaging, data storage, the full security surface, and classic vs block are the module's.*
+
+#### GF.1 — The picture first
+
+```
+Request ──▶ index.php ──▶ WordPress core boots
+                              ├─ loads active plugins      ← your code lives here
+                              ├─ loads the active theme
+                              └─ fires HOOKS at known moments:
+                                    init ... wp_head ... the_content ... wp_footer
+                                         │
+                       your functions are ATTACHED to hooks:
+                         ACTION  "when this moment happens, also run my function"
+                         FILTER  "when this value passes by, let me change it"
+                              ▼
+Response (HTML) ◀── theme templates render, filtered by your code
+```
+
+You never edit core. You attach to it.
+
+#### GF.2 — PHP, the first hour
+
+**Look up:**
+
+- How PHP runs: one process per request, then everything is thrown away
+- Variables (`$`), arrays (the only collection, both list and map), functions, `echo`
+- Mixing PHP and HTML in one file, and why that's both the convenience and the danger
+- Running PHP on the command line to try things
+
+#### GF.3 — WordPress locally
+
+**Do:** run WordPress on your machine. Local (by Flywheel), Docker's official WordPress image, or `wp-env` all work.
+
+**Look up:** the folder layout (`wp-admin`, `wp-includes`, `wp-content`); which of those you may change; and WP-CLI.
+
+**Question to settle:** after a core update, which folders get replaced? Where does that leave anything you've edited?
+
+#### GF.4 — Hooks
+
+**Look up:** the WordPress Plugin Handbook, on actions and filters; `add_action` and `add_filter`; priority and argument counts; and the Query Monitor plugin, which shows you which hooks fired on a page.
+
+#### GF.5 — A throwaway plugin
+
+**Build:** the smallest possible plugin: a folder in `wp-content/plugins`, a PHP file with the required header comment, and one filter that adds a line of text to the end of every post. Activate it in the admin.
+
+**Then:** add a shortcode that prints today's date wherever an author types it.
+
+**Look up:** the plugin header fields; activation and deactivation hooks; and `add_shortcode`.
+
+#### GF.6 — The security vocabulary
+
+**Look up**, as vocabulary only (building these in is M22's fourth decision):
+
+- Sanitizing input vs escaping output, and the WordPress function families for each
+- Nonces: what WordPress means by one, and what attack it stops
+- Capabilities and roles, and `current_user_can`
+- `$wpdb` and `$wpdb->prepare`
+
+#### GF.7 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Make your shortcode accept a parameter** and print it back. Then put `<script>alert(1)</script>` in as the parameter. What happened? That's M22's trap.
+2. **Look at how your plugin would store anything,** if it needed to. You have four very different places to choose from. That's M22's third decision.
+3. **Switch to a different theme.** Did your plugin survive? Would it have, as a child-theme addition?
+4. **Open the block editor and try to insert your shortcode.** How does it feel compared with a native block?
+
+#### GF.8 — Hand-off: what's yours in M22
+
+| Ground Floor left this… | M22 asks you to… |
+|---|---|
+| A plugin, because it was simplest | Choose plugin vs child theme vs must-use plugin |
+| Text appended to posts | One genuine custom feature that does something real |
+| No stored data | Choose where data lives, using WordPress's APIs |
+| A shortcode that echoed a script | Sanitize, escape, nonce, and check capabilities throughout |
+| A shortcode | Decide classic vs block |
+
+Then read the Briefing below.
+
+#### GF.9 — Check yourself before moving on
+
+- What's the difference between an action and a filter? Give one example of each.
+- Why does editing a file in `wp-includes` guarantee you'll lose the change?
+- What does a nonce protect against?
+- Sanitize or escape: which one happens on the way in, and which on the way out?
+- What did your shortcode do with the script tag?
 
 ### Briefing
 
@@ -2166,6 +4228,80 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 
 **Anchors:** your React/TypeScript foundation (the function-first guide); the contract thread — this consumes your M1 `incidents` API.
 
+### Ground Floor — React without a browser
+
+*Read this before the Briefing. It assumes you know React well, but not that you've run it on a phone. You'll get a throwaway one-screen app running on both platforms first. This tells you what each piece is for and what to look up, never how to write it. Expo vs bare, navigation, styling, list rendering, and platform differences are the module's.*
+
+#### GF.1 — The picture first
+
+```
+Web React:      components ──▶ ReactDOM ──▶ <div>, <span> ──▶ browser layout (CSS) ──▶ pixels
+
+React Native:   components ──▶ RN renderer ──▶ native views ──▶ iOS UIKit / Android Views ──▶ pixels
+                    │
+                    └─ your JS runs in its own engine (Hermes), NOT a browser:
+                       no DOM, no CSS files, no window.location
+```
+
+#### GF.2 — How React Native works, as ideas
+
+**Look up:** what React Native renders to instead of HTML; the core components (`View`, `Text`, `Image`, `ScrollView`, `Pressable`) and their nearest web equivalents; why all text must be inside `Text`; and what Hermes is.
+
+#### GF.3 — Running something on both platforms
+
+**Do:** create a project with the fastest path the React Native docs recommend right now, and get it running on your phone and in one simulator or emulator.
+
+**Look up:** the official React Native "Get Started" guide; Expo Go on a physical phone; the iOS Simulator (Mac only) and the Android Emulator; and what to do if you can only run one of them locally.
+
+Don't treat this as M23's first decision. Getting *something* running is the point here.
+
+#### GF.4 — Layout and style without CSS
+
+**Look up:**
+
+- Styles as JavaScript objects, and `StyleSheet.create`
+- Flexbox in React Native, including that the default direction is *column*, not row
+- Density-independent pixels: what a unitless number means on a phone
+- What you don't have: no grid, no cascade, no class names, no media queries
+
+**Build:** one screen with a header and three cards, styled with what you've just read.
+
+#### GF.5 — Talking to your API
+
+**Look up:** `fetch` in React Native; why `localhost` on your phone or emulator doesn't mean your laptop; finding your laptop's local network address; and the Android emulator's special address for the host machine.
+
+**Build:** make the screen fetch and show data from whichever throwaway API you built earlier.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Look at the same screen on iOS and on Android.** Find at least two differences: the status bar, the safe area at the top, fonts, the back gesture. That's M23's fifth decision.
+2. **Render five hundred items by mapping an array.** Scroll fast. Watch the frame rate and memory in the dev tools. That's the list-rendering decision.
+3. **Ask how you'd get to a second screen.** There are no links and no URLs. That's the navigation decision.
+4. **Reach for something from M15,** like a grid. What do you have instead?
+
+#### GF.7 — Hand-off: what's yours in M23
+
+| Ground Floor left this… | M23 asks you to… |
+|---|---|
+| Whatever setup was fastest | Choose Expo vs bare, and say why |
+| One screen | Two screens with real mobile navigation |
+| Inline style objects | Choose a styling approach |
+| An array mapped into five hundred views | Decide how to render long lists |
+| Platform differences spotted | Handle at least one cleanly |
+| A throwaway API | Consume your M1 `incidents` API |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What does a `View` become on iOS and on Android?
+- Why doesn't `localhost` from your phone reach your laptop?
+- What's the default flex direction in React Native, and how does that differ from the web?
+- Name two differences you saw between the iOS and Android versions.
+- What happened when you scrolled five hundred mapped items?
+
 ### Briefing
 
 Your React knowledge _mostly_ transfers to mobile — and the places it _doesn't_ are exactly what this module is for. React Native lets you write mobile apps for iOS and Android in React, but the runtime is not a browser: there's no DOM, no CSS as you know it, navigation works differently, and the two platforms diverge in ways you must handle. The goal here is deliberately narrow — build just enough to _feel_ those differences, not to ship an app. Point it at your existing `incidents` API so the backend is already done and you can focus entirely on the mobile-vs-web delta. The center of gravity is precisely that delta: **navigation, touch, layout-without-CSS, and two platforms from one codebase.**
@@ -2242,6 +4378,85 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 > - Access is controlled, and you can name what would still be missing for production.
 
 **Anchors:** the security/privacy mindset from M4; the honest-data discipline from M9 (you're not claiming clinical expertise); _Where the Data Lives_ on data modeling.
+
+### Ground Floor — What makes health data different
+
+*Read this before the Briefing. It assumes you can build a validated API from earlier Ground Floors, but not that you've read a health-data standard or thought about a log file as a liability. You'll read FHIR and hand-write a few resources first. This tells you what each piece is for and what to look up, never how to write it. Schema choice, validation, privacy, auditing, and the honest boundary are the module's.*
+
+#### GF.1 — The picture first
+
+```
+An ordinary app:     { "bp": 120 }                              ← what? whose? when? in what?
+
+A FHIR Observation:  resourceType: "Observation"
+                     status:  final
+                     code:    which measurement, from a shared code system (LOINC)
+                     subject: which Patient (a reference, not a name)
+                     effectiveDateTime: when it was measured
+                     value:   number + UNIT, from a shared unit system (UCUM)
+
+Everywhere the data goes:  API ─▶ database ─▶ LOGS ─▶ error messages ─▶ backups
+                           every one is a place it can leak
+```
+
+#### GF.2 — FHIR, from zero
+
+**Look up:**
+
+- What HL7 FHIR is, and the interoperability problem it solves
+- What a FHIR *resource* is, then read two in the official spec: `Patient` and `Observation`
+- Codes: LOINC for what was measured, and why a free-text label isn't enough
+- UCUM for units, and the difference between `mg` and `g` in a field that only holds a number
+- How one resource references another
+
+**Do:** find the official FHIR example for a blood-pressure Observation and read every field. Then hand-write a weight Observation for an invented patient.
+
+#### GF.3 — The legal and ethical frame, as vocabulary
+
+**Look up:** what HIPAA covers in the US and what it doesn't (personal apps often fall outside it); what PHI and PII mean; and data minimization as a principle.
+
+You're not becoming a compliance expert. You're learning the words so you can say what you *didn't* build. That's M24's fifth decision.
+
+#### GF.4 — Plausibility, as a concept
+
+**Look up:** typical and physiologically possible ranges for one vital sign, from a reputable medical source; and the difference between "unusual" and "impossible."
+
+**Question to settle:** a weight of 70 arrives. Is it plausible? What would you need to know first?
+
+#### GF.5 — Where data leaks
+
+**Look up:** what your framework logs by default (request bodies? query strings? exception messages?); log levels; and structured logging with redaction.
+
+**Do:** in an API you built earlier, send a request with a fake "sensitive" field and then read every log line the server wrote. Was the field anywhere in them?
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Your hand-written Observation.** Could someone else's system read it without asking you what anything means? Compare it with the `{ "bp": 120 }` version. That's M24's first decision.
+2. **Send a weight of 7000** to an earlier API that stores numbers. Did anything stop it? That's the validation decision.
+3. **Your log check.** Wherever your fake sensitive field showed up, it would show up for real data too. That's the privacy decision.
+4. **Ask who viewed a record yesterday.** Your earlier APIs can't say.
+
+#### GF.7 — Hand-off: what's yours in M24
+
+| Ground Floor left this… | M24 asks you to… |
+|---|---|
+| FHIR resources read and hand-written | Decide FHIR-compatible vs your own schema |
+| Ranges looked up | Validate units and plausibility on the way in |
+| A sensitive field found in logs | Keep sensitive fields out of logs, and control access |
+| No record of access | Decide on auditability |
+| Compliance vocabulary | Document honestly what's missing for production |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What's a FHIR resource? Name the fields an Observation needs to mean something.
+- Why does an Observation carry a LOINC code instead of just a label?
+- What's UCUM, and what error does it prevent?
+- Where did your fake sensitive field end up in your logs?
+- Name one thing HIPAA doesn't cover that people often assume it does.
 
 ### Briefing
 
@@ -2321,6 +4536,82 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 > - Permission errors and collisions are handled with reasons — no crashes, no silent overwrites.
 
 **Anchors:** the Python books; the tree thread (closing it with M11 and M20); the safety instincts from M10's migration.
+
+### Ground Floor — Walking your own disk
+
+*Read this before the Briefing. It assumes you can write Python and know M11's tree walk, but not that you've walked a real filesystem or moved files from code. You'll build a throwaway read-only tool first, on a sandbox folder you create. This tells you what each piece is for and what to look up, never how to write it. The walking API, dry-run design, symlinks, rules, and the collision policy are the module's.*
+
+#### GF.1 — The picture first
+
+```
+sandbox/                       a directory is a node; its entries are children
+├── photos/
+│   ├── a.jpg     (2.1 MB)     a file is a leaf with metadata: size, mtime, type
+│   └── trip/
+│       └── b.jpg (4.8 MB)
+├── notes.txt     (3 KB)
+└── shortcut ──▶ ../         ← a SYMLINK: a pointer that can lead back UP the tree
+
+READ (safe):    walk ─▶ stat each entry ─▶ report
+WRITE (danger): walk ─▶ decide ─▶ rename / move    ← no undo
+```
+
+#### GF.2 — A sandbox first, always
+
+**Do:** before writing any code, make a throwaway folder tree with a script: nested folders, files of different sizes and extensions, a couple of same-named files in different folders, and one symlink pointing back up to an ancestor. Never point this module's code at a real folder until the module says so.
+
+**Look up:** creating symlinks (`ln -s` in your WSL shell); `ls -la`, and how it shows a link; and `du -sh`.
+
+#### GF.3 — Paths and metadata
+
+**Look up:**
+
+- `pathlib.Path`: joining, `name`, `suffix`, `parent`, resolving to an absolute path
+- `stat()`: size, modification time, and what `st_mode` tells you about file type
+- `is_file`, `is_dir`, `is_symlink`, and which of them follow links
+- `os.walk`, `os.scandir`, and `Path.rglob`, as three ways to walk. Choosing is M25's first decision.
+
+#### GF.4 — A read-only reporter
+
+**Build:** a command-line tool that walks a folder and prints each file's path and size, then the total size per top-level folder, like `du`. It only reads. Run it on the sandbox.
+
+**Look up:** `argparse` for taking the folder as an argument; and human-readable sizes (KB, MB).
+
+#### GF.5 — Moving files, as a concept
+
+**Look up:** `shutil.move` vs `Path.rename`, and what happens to each when the destination already exists, on Linux and on Windows; moving across filesystems; and permission errors (`PermissionError`).
+
+Don't move anything yet, not even in the sandbox.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Did your reporter visit the symlink?** Did it follow it? If it did, how far did it go before you stopped it? That's M25's trap.
+2. **Compare your total with `du -sh`.** If they differ, find out why. Links and hidden files are the usual suspects.
+3. **Make one file unreadable** (`chmod 000`) and rerun. What did your tool do?
+4. **Imagine moving both same-named files into one folder.** What would `shutil.move` do to the second one? That's the collision decision.
+5. **Imagine running a move rule with a typo in it on your real Downloads folder.** That's why the module insists on a dry run.
+
+#### GF.7 — Hand-off: what's yours in M25
+
+| Ground Floor left this… | M25 asks you to… |
+|---|---|
+| Whichever walk you used | Choose `os.walk`, `pathlib`, or `scandir`, and defend it |
+| A read-only reporter | Add rule-based moves and renames, dry-run by default |
+| A symlink that may have looped | Decide how to handle symlinks and detect cycles |
+| No rules at all | Choose how rules are expressed |
+| An unreadable file, and a name clash imagined | Handle errors and collisions with reasons, never silent overwrites |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What's a symlink, and which `pathlib` checks follow one?
+- What does `stat()` give you, and which field is the size?
+- What does `shutil.move` do when the destination name already exists?
+- How did your tool behave on the unreadable file?
+- Why build a sandbox before writing the walk?
 
 ### Briefing
 
@@ -2435,7 +4726,7 @@ The numbers continue from Volume I, so **reach-back questions span both books** 
 This replaces the live runtime. Run every module through this loop; the **gates** are the "don't advance until…" checks the coach used to enforce. You enforce them on yourself now.
 
 1. **Read the story block first.** Know the MVP and the acceptance criteria before the briefing. **Gate 0:** can you restate the MVP in one sentence? If not, reread.
-2. **Read the Briefing and The Trap.** Say the trap back in your own words. **Gate 1:** can you name the trap without looking?
+2. **Work the Ground Floor, then read the Briefing and The Trap.** Say the trap back in your own words. **Gate 1:** can you name the trap without looking?
 3. **Work the Decision Map — commit before you compare.** For each decision, write your **DSA** (your choice + your reasons + one alternative you rejected and why) in a `decisions.md` _before_ you research or build. This is the load-bearing habit; the code just confirms it. **Gate 2:** is your DSA written down?
 4. **Run the Research Targets under their timeboxes.** The clock governs the question, not the reading list — hunting your own sources is legitimate research inside the box. Exit each on its done-when (a capability you can _say_). Park anything off-fence in `parking-lot.md`, one line, and move on. **Gate 3:** can you answer each done-when out loud, tab closed?
 5. **Build to the MVP — and no further.** The acceptance criteria are the ceiling for this pass; the fence holds everything else. Depth comes from deriving _within_ the fence, not wandering wider.
@@ -2453,7 +4744,7 @@ This replaces the live runtime. Run every module through this loop; the **gates*
 
 Same nine-part spine as Volume I, with the Scrum block promoted to the top:
 
-- **Story / MVP / Acceptance criteria** (the block up top) → **Anchors** → **Briefing** (zero-start, climbing the jargon ladder) → **The trap** (named, unresolved) → **The build** (scope and contract only — schemas and type signatures allowed, no code) → **Decision map** (4–6 named decisions, write your DSA before building) → **Research targets** (question · timebox · done-when · 0–2 optional seeds) → **Out-of-scope fence** → **Measure ritual** → **Hints ladder** (only where a problem is genuinely hard) → **Prove it — the three rooms** (ending in a reach-back).
+- **Story / MVP / Acceptance criteria** (the block up top) → **Anchors** → **Ground Floor** (zero to a working throwaway of the plumbing, no code, ending in a hand-off table) → **Briefing** (zero-start, climbing the jargon ladder) → **The trap** (named, unresolved) → **The build** (scope and contract only — schemas and type signatures allowed, no code) → **Decision map** (4–6 named decisions, write your DSA before building) → **Research targets** (question · timebox · done-when · 0–2 optional seeds) → **Out-of-scope fence** → **Measure ritual** → **Hints ladder** (only where a problem is genuinely hard) → **Prove it — the three rooms** (ending in a reach-back).
 
 ---
 
@@ -2491,6 +4782,84 @@ _Two small modules that are secretly the seed of every tools-for-thought project
 > - An empty state (no notes yet) is shown distinctly.
 
 **Anchors:** M1/M2 (you built the _contract_ version of a persisted resource; this is its plainest, most human form); _Where the Data Lives_; M4's security mindset applied to displayed input.
+
+### Ground Floor — A form, a POST, a row
+
+*Read this before the Briefing. It assumes M1 and M2's Ground Floors, so you've served a list from a database, but not that you've sent data the *other* way, from a form into a row. You'll build a throwaway guestbook first: type a name, save it, see it in a list. This tells you what each piece is for and what to look up, never how to write it. Ordering, escaping, timestamps, and optimistic display are the module's.*
+
+#### GF.1 — The picture first
+
+```
+<textarea> + button
+     │  submit event
+     ▼
+fetch POST /api/entries   body: {"text": "..."}   Content-Type: application/json
+     │
+     ▼
+server route ──▶ validate ──▶ INSERT INTO entries ... ──▶ 201 Created + the new row
+     │
+     ▼
+client re-fetches (or appends) ──▶ renders the list ──▶ the TEXT A STRANGER WROTE is now on your page
+```
+
+M1–M2 only read. This is the first time data flows in.
+
+#### GF.2 — Forms, from zero
+
+**Look up:**
+
+- HTML forms: `<form>`, `<textarea>`, `<button type="submit">`, and what the browser does on submit by default (a full page navigation)
+- `event.preventDefault()`, and why you call it when submitting with `fetch` instead
+- Controlled inputs in React, and clearing the field after a successful submit
+
+#### GF.3 — Sending data
+
+**Look up:** `fetch` with `method: "POST"`, a JSON body, and the `Content-Type` header; how your backend framework reads a JSON request body (a `@RequestBody` in Spring, a Pydantic model parameter in FastAPI); and status 201 Created.
+
+#### GF.4 — Creating a row
+
+**Look up:** `INSERT ... RETURNING` in Postgres; column defaults, including a default of the current time; and why `INSERT` uses parameters, never string formatting (M2's Ground Floor covered why).
+
+**Build:** the throwaway guestbook end to end: a form that posts a name and message, a table that stores them, and a list that shows them.
+
+#### GF.5 — How the browser turns a string into a page
+
+**Look up:**
+
+- `innerHTML` vs `textContent` on a DOM element, and what each does with a string containing `<b>`
+- How React inserts text from a variable into JSX, and what `dangerouslySetInnerHTML` is
+- What cross-site scripting (XSS) is, as a definition only. Where it lives in this feature is M26's trap.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Submit an entry containing `<b>hi</b>`.** Does it show as bold, or as the literal characters? Then try it in a vanilla-JS page that renders with `innerHTML`, if you're curious. Don't decide where to defend yet. That's M26's second decision.
+2. **Which entry is at the top of your list,** and what decided that? Add a few, reload, and check again. That's the ordering decision.
+3. **Where does each entry's time come from,** if it has one? That's the timestamp decision.
+4. **Submit, then kill the server before it responds.** What does the user see? That's the optimistic-display decision.
+5. **Load the page with an empty table.** What shows?
+
+#### GF.7 — Hand-off: what's yours in M26
+
+| Ground Floor left this… | M26 asks you to… |
+|---|---|
+| A guestbook | A notes feature, create and list only |
+| Whatever order rows came back in | Newest-first from the query, surviving a `LIMIT` |
+| A `<b>` tag test, unresolved | Render user text inert: decide escape on output vs sanitize on input |
+| Time from wherever | Decide who sets `created_at` |
+| Submit and hope | Decide optimistic vs confirmed display |
+| An empty page that just looks empty | A distinct empty state |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What does a form do on submit by default, and why do you stop it?
+- What header tells your server the body is JSON?
+- What does `RETURNING` give you after an `INSERT`?
+- `innerHTML` vs `textContent`: what does each do with `<b>hi</b>`?
+- What did your empty guestbook show?
 
 ### Briefing
 
@@ -2560,6 +4929,84 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 > - Clipboard access without a user gesture (or when denied) fails _safely_ with a handled state, not an uncaught crash.
 
 **Anchors:** M16 (text as a first-class concern); the "protective vs extractive friction" framework (the clipboard's permission gate is _protective_ friction — it buys the user a security property); your tools-for-thought instincts.
+
+### Ground Floor — The DOM as a tree of nodes
+
+*Read this before the Briefing. It assumes you know JavaScript and the DOM at the level of `querySelector`, but not that you've worked with text nodes or browser permissions. You'll log selections and poke at the clipboard on a throwaway page first. This tells you what each piece is for and what to look up, never how to write it. Which APIs, gestures, rich content, and denial handling are the module's.*
+
+#### GF.1 — The picture first
+
+```
+<p>Hello <b>bold</b> world</p>
+
+becomes nodes:
+   P (element)
+   ├── "Hello "     (text node)
+   ├── B (element)
+   │    └── "bold"  (text node)
+   └── " world"     (text node)
+
+Select from "lo" to "wo":  a RANGE = (start node, start offset) → (end node, end offset)
+                           crossing three text nodes and one element
+
+The clipboard: shared with EVERY app on the machine, so the browser guards it
+```
+
+#### GF.2 — Nodes, not just elements
+
+**Look up:** DOM node types (element, text, comment); `childNodes` vs `children`; `nodeType`; and walking a node's children recursively.
+
+**Do:** in the console, take any paragraph containing a link or bold text and print every child node with its type.
+
+#### GF.3 — Selection and Range, as concepts
+
+**Look up:**
+
+- `window.getSelection()`, the `Selection` object, and `toString()`
+- `Range`: start and end containers and offsets
+- The `selectionchange` and `mouseup` events, and which fires when
+- A form field's `selectionStart` and `selectionEnd`, as the simpler cousin
+
+**Build:** a throwaway page with a few paragraphs containing bold and links. Log the selection's text and its start and end containers whenever the selection changes.
+
+#### GF.4 — Why the clipboard is guarded
+
+**Look up:**
+
+- Secure contexts: why some APIs only exist on `https://` or `localhost`
+- User activation (a "user gesture"): what counts, and how long it lasts
+- The Permissions API, and how browsers differ on clipboard permissions
+- `navigator.clipboard` vs `document.execCommand('copy')`, as history only. Choosing is M27's first decision.
+
+#### GF.5 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Select text that starts in plain text and ends inside the bold.** What are the start and end containers? Are they the same node?
+2. **Select inside a `<textarea>`** on the same page. Does `getSelection()` behave the same way?
+3. **Call `navigator.clipboard.readText()` from the console** and then from a page-load script. What happened each time? Then call it from a button click. That's M27's trap.
+4. **Open the page over a plain `http://` address** that isn't localhost, if you can, such as your laptop's LAN address from your phone. Is `navigator.clipboard` even defined?
+5. **Copy formatted text from a website** and ask what the clipboard is actually holding. That's the plain-vs-rich decision.
+
+#### GF.6 — Hand-off: what's yours in M27
+
+| Ground Floor left this… | M27 asks you to… |
+|---|---|
+| Selections logged | Capture selection text and position, and do something visible with it |
+| Clipboard calls that failed | Copy and paste on a user gesture, with the API you choose |
+| Two kinds of selection seen | Choose Selection API vs field indices for your case |
+| Rich content wondered about | Decide plain vs rich clipboard content |
+| Uncaught rejections | Handle denied permission gracefully |
+
+Then read the Briefing below.
+
+#### GF.7 — Check yourself before moving on
+
+- What's a text node, and why does a paragraph with bold text in it have more than one?
+- What are a Range's four defining values?
+- What's a secure context, and does `localhost` count?
+- What happened when you read the clipboard on page load vs on a click?
+- Why would a browser guard *reading* the clipboard more than writing to it?
 
 ### Briefing
 
@@ -2648,6 +5095,91 @@ _UI as a function of a changing input — scroll position, the time of day, play
 
 **Anchors:** _Pixels With Intent_ (rendering pipeline and compositing); reach-backs to M15 (layout), M16 (avoiding reflow), M17 (60fps, award-tier). You'll drop in your own images (photography or a curated set), which also makes this portfolio-real.
 
+### Ground Floor — Viewports, scroll, and what's cheap to animate
+
+*Read this before the Briefing. It assumes M15's Ground Floor on layout and some of M17's on frames, but not that you've driven visuals from scroll or inspected the compositor. You'll build throwaway full-height colored panels first. This tells you what each piece is for and what to look up, never how to write it. The scroll primitive, transitions, image fit, overlay legibility, loading, and reduced motion are the module's.*
+
+#### GF.1 — The picture first
+
+```
+viewport = the visible window; 100vh = its height (mostly — phones complicate this)
+
+  scrollY = 0        ┌───────────┐
+                     │  panel 1  │  ← in view
+  scrollY = 1×vh     ├───────────┤
+                     │  panel 2  │
+  scrollY = 2×vh     ├───────────┤
+                     │  panel 3  │
+                     └───────────┘
+
+scroll position ──▶ which panel, how far through it ──▶ visual state
+
+Cheap to change:  transform, opacity            → COMPOSITE only (GPU)
+Costly to change: top, height, width, margin    → LAYOUT, then PAINT, then COMPOSITE
+```
+
+#### GF.2 — The viewport
+
+**Look up:** `vh`, and the newer `svh`, `lvh`, and `dvh` units, and why mobile browsers' collapsing toolbars made them necessary; `position: sticky` vs `fixed`; and full-bleed layout (an element that spans the viewport edge to edge, ignoring its container's padding).
+
+**Build:** a throwaway page of five full-viewport panels, each a different solid color with a large number in the middle.
+
+#### GF.3 — Scroll as an input
+
+**Look up:**
+
+- The `scroll` event, how often it fires, and passive listeners
+- `window.scrollY` and an element's position relative to the viewport
+- `IntersectionObserver`: thresholds and what an entry reports
+- CSS `scroll-snap`, and CSS scroll-driven animations (`animation-timeline`), as names. Choosing among these is M28's first decision.
+
+**Do:** count how many scroll events fire during one slow scroll, and log it.
+
+#### GF.4 — The compositor
+
+**Look up:** *Pixels With Intent*, its rendering-pipeline and compositing chapters. Then confirm which CSS properties trigger layout, which only paint, and which only composite (csstriggers.com is a classic reference). Look up `will-change` and what it costs.
+
+**Do:** in DevTools' Rendering tab, turn on Paint flashing and Layer borders and scroll your page.
+
+#### GF.5 — Images at full size
+
+**Look up:** an image's natural size vs displayed size; `object-fit` and `object-position`, as names; `loading="lazy"`; `img.decode()`; and `srcset` with `sizes`.
+
+**Do:** replace your colored panels with a few of your own photos of different shapes. Use the simplest markup that works.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Animate something by changing `top` on every scroll event,** then the same visual by changing `transform`. Record both in the Performance panel. Compare frames and paint flashing. That's M28's trap.
+2. **Scroll fast to the last photo on a throttled network.** Is there a flash or pop-in? That's the loading decision.
+3. **Look at your photos' shapes against the viewport.** Did any distort, crop, or letterbox? That's the fit decision.
+4. **Put white text over your lightest photo.** Can you read it?
+5. **Open the page on your phone and scroll.** Did `100vh` behave?
+6. **Turn on reduced motion** in your OS. Did anything change?
+
+#### GF.7 — Hand-off: what's yours in M28
+
+| Ground Floor left this… | M28 asks you to… |
+|---|---|
+| A scroll-event counter | Choose a scroll primitive that doesn't thrash |
+| `top` vs `transform`, compared | Choose a transition and animate only cheap properties |
+| Photos displayed however they landed | Fit varied images full-bleed with no distortion |
+| White text you can't read | Keep overlays legible over any image |
+| Pop-in on a slow network | Choose a loading strategy with no pop-in |
+| Reduced motion ignored | Decide what the gallery becomes for reduced-motion users |
+| Colored panels | Your own images, at award quality |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What's the difference between `vh` and `dvh`, and why does it matter on a phone?
+- How many scroll events fired during your slow scroll?
+- Which CSS properties are composite-only?
+- What did paint flashing show when you animated `top`?
+- What does `IntersectionObserver` tell you that a scroll event doesn't?
+
 ### Briefing
 
 Full-viewport ("full-bleed") imagery advanced by scroll is the signature of award-winning editorial and portfolio sites. Underneath the polish is one idea — **map scroll position to visual state** — done on the browser's terms: on the compositor, not by thrashing layout. The overlays add a second problem, legibility of text over arbitrary images. The center of gravity is **scroll-as-input rendered cheaply, plus contrast over images you don't control.**
@@ -2731,6 +5263,82 @@ _Run the module in this order, one step at a time. A step's **Check** must pass 
 
 **Anchors:** M12 (time logic, walking backward through time), M14 (time windows), _Where the Data Lives_. The time thread, ranked by a moving "now."
 
+### Ground Floor — Sorting and clock arithmetic
+
+*Read this before the Briefing. It assumes M12's Ground Floor on dates, but not that you've written a custom comparator or reasoned about time-of-day ranges. You'll sort a throwaway table and test whether "now" falls inside a range first. This tells you what each piece is for and what to look up, never how to write it. Where it's computed, hour representation, sort stability, grouping strategy, time zones, and refresh cadence are the module's.*
+
+#### GF.1 — The picture first
+
+```
+items ──▶ for each, COMPUTE: isOpenNow(item.hours, now)   ← derived, never stored
+      ──▶ SORT with a comparator (a, b) ─▶ negative | 0 | positive
+      ──▶ render
+
+                 now changes every minute ─────────┐
+                                                   ▼
+                                         the answer above changes too
+```
+
+#### GF.2 — Comparators
+
+**Look up:**
+
+- `Array.prototype.sort` with a comparator, and what its return values mean
+- The default sort with no comparator, and what it does to numbers (try `[10, 9, 1].sort()`)
+- `sort` vs `toSorted`, and which one mutates
+- What "stable sort" means, as a definition. Whether you can rely on it is M29's third decision.
+
+**Build:** a throwaway table of books, sortable by rating descending, then by title as a tiebreak.
+
+#### GF.3 — Time of day as numbers
+
+**Look up:** getting the current day of the week, hour, and minute in JavaScript; representing a time of day as minutes since midnight; and parsing `"22:00"` into a number.
+
+**Build:** a function that answers "is it lunchtime right now?" for a range of 12:00 to 13:30, given a `now` you pass in. Test it with several invented "nows."
+
+#### GF.4 — Time zones, as vocabulary
+
+**Look up:** `Intl.DateTimeFormat` with a `timeZone` option; IANA time zone names like `America/New_York`; what DST does to local time twice a year; and the Temporal proposal, as a name.
+
+**Do:** print the current time in Philadelphia, London, and Tokyo.
+
+#### GF.5 — Something that changes while you watch
+
+**Look up:** `setInterval` in a React effect, and cleaning it up; and why a value computed once in render goes stale.
+
+**Build:** show the current time on the page, updating each minute.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Change your lunchtime range to 22:00 to 02:00.** Ask it about 01:00. What does it say? That's M29's trap.
+2. **Sort your books by rating where several share a rating,** then sort the result again by something else. Did the earlier order survive within the ties? That's the stability decision.
+3. **Imagine your list includes a café in Tokyo.** Whose clock decides whether it's open? That's the time-zone decision.
+4. **Leave the page open across a lunchtime boundary.** Did anything update on its own? That's the recompute decision.
+
+#### GF.7 — Hand-off: what's yours in M29
+
+| Ground Floor left this… | M29 asks you to… |
+|---|---|
+| A lunchtime check | "Open now" from each item's own weekly hours |
+| A same-day range | Represent hours that cross midnight |
+| A sort with a tiebreak | Float open items up without scrambling the rating order |
+| Ties tested | Decide whether to rely on stability or build a composite key |
+| Three clocks printed | Decide whose time zone judges "open" |
+| A clock that ticks | Recompute at the right cadence |
+| Everything client-side by default | Decide where "open now" is computed |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What does a comparator return to say "a comes before b"?
+- What does `[10, 9, 1].sort()` return, and why?
+- How do you turn `"22:00"` into minutes since midnight?
+- What did your lunchtime check say about 01:00 for a 22:00–02:00 range?
+- What's a stable sort?
+
 ### Briefing
 
 This is multi-criteria sorting where the _primary_ key is **computed and time-dependent**. "Open now" is a moving target: whether an item qualifies changes as time passes and depends on each item's own schedule. The center of gravity is **layering a computed, time-dependent primary sort on top of a stable secondary sort** — and surviving the time-math pitfalls that make grown engineers wince.
@@ -2801,6 +5409,80 @@ Mock "now" to a time where some items straddle open/closed and one crosses midni
 
 **Anchors:** M5 (async and events); M17 (`requestAnimationFrame` for smooth UI); _Waiting, All the Way Up_ (events).
 
+### Ground Floor — The media element and its events
+
+*Read this before the Briefing. It assumes JavaScript and React, but not that you've driven an audio element or listened to its state events. You'll build a throwaway play button and time readout first. This tells you what each piece is for and what to look up, never how to write it. Element vs Web Audio, progress strategy, the `play()` promise, seeking during load, and state reflection are the module's.*
+
+#### GF.1 — The picture first
+
+```
+                   you DRIVE it:   play()  pause()  currentTime = 42  volume = 0.5
+                          │
+<audio src="...">  ◀──────┘
+     │
+     │  it REPORTS back, as events:
+     ├── loadedmetadata   (duration is now known)
+     ├── canplay / waiting (buffering)
+     ├── play / pause / ended
+     └── timeupdate        (a few times per second)
+     ▼
+your UI: button label, time readout, scrubber position
+```
+
+The element is the source of truth. Your UI is a reflection of it.
+
+#### GF.2 — The media element
+
+**Look up:**
+
+- `HTMLMediaElement`: `src`, `paused`, `currentTime`, `duration`, `volume`, `readyState`, `buffered`
+- Its events, and the order they fire in when a file loads
+- What `readyState`'s numbers mean
+- Holding a reference to the element in React with `useRef`
+
+**Build:** a throwaway page with an audio file, a play/pause button, and a readout of current time and duration. Use the simplest code that works.
+
+#### GF.3 — Inputs for the controls
+
+**Look up:** `<input type="range">`: `min`, `max`, `step`, `value`, and its `input` vs `change` events; and formatting seconds as `m:ss`.
+
+**Build:** a volume slider.
+
+#### GF.4 — Autoplay policy
+
+**Look up:** browser autoplay policies (Chrome's and Safari's); that `play()` returns a promise; and what a "user activation" is (M27's Ground Floor touched it).
+
+#### GF.5 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Log every `timeupdate`** with a timestamp. How many per second? Would a progress bar driven by those look smooth? That's M30's trap.
+2. **Call `play()` on page load,** before any click. What happened to the promise? That's the `play()` decision.
+3. **Throttle the network and set `currentTime`** before the file has loaded much. What happens? That's the seeking decision.
+4. **Pause from your OS media keys or headphone button,** or let the track end. Does your button's label still match reality? That's the state-reflection decision.
+5. **Ask whether you'd need a waveform or effects.** That's the element vs Web Audio decision.
+
+#### GF.6 — Hand-off: what's yours in M30
+
+| Ground Floor left this… | M30 asks you to… |
+|---|---|
+| The `<audio>` element, by default | Choose the element or Web Audio |
+| A time readout from `timeupdate` | Smooth progress that never drifts from real playback |
+| A `play()` promise ignored | Handle autoplay rejection |
+| A seek on a throttled network | Handle seeking before the file is ready |
+| A button that may lie | Reflect actual playback state at all times |
+| No scrubber | A scrubber that seeks and tracks |
+
+Then read the Briefing below.
+
+#### GF.7 — Check yourself before moving on
+
+- Which event tells you the duration is known?
+- What's the source of truth for playback position?
+- How many `timeupdate` events fired per second?
+- What happened to `play()` on page load?
+- What did your button show after your OS paused the audio?
+
 ### Briefing
 
 An `<audio>` element (or the Web Audio API) exposes playback and a stream of state events; building transport controls means both _driving_ that state and _reflecting_ it. The center of gravity is **media state — loading, buffering, playing, ended — and syncing the UI to real playback time without drift.**
@@ -2866,6 +5548,78 @@ _Two modules of code that leaves the sandbox: a desktop app that must reach the 
 > - The renderer does **not** have Node integration enabled (secure default).
 
 **Anchors:** the floor thread (Electron is Chromium + Node bundled — a convenience with a receipt); the security material from M4 and the networking primer.
+
+### Ground Floor — Two kinds of process
+
+*Read this before the Briefing. It assumes you know Node and web front ends, but not that you've built a desktop app or crossed a process boundary on purpose. You'll get a throwaway Electron window open and send one message between processes first. This tells you what each piece is for and what to look up, never how to write it. Where control runs, the security setup, transparency, framing, and sizing are the module's.*
+
+#### GF.1 — The picture first
+
+```
+┌─────────────────────── your Electron app ───────────────────────┐
+│                                                                  │
+│  MAIN process (one)             RENDERER process (one per window)│
+│  Node.js, full OS access        Chromium page: your HTML/JS UI   │
+│  owns BrowserWindow             sandboxed like a web page        │
+│        ▲                                   │                     │
+│        │◀────────── IPC messages ──────────┘                     │
+│        │           (through a PRELOAD script, if you build one)  │
+│        ▼                                                         │
+│  the OS: windows, files, menus                                   │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+#### GF.2 — Processes, as a concept
+
+**Look up:** what an OS process is; why processes can't read each other's memory; inter-process communication (IPC), in general terms; and why Chrome runs each tab in its own process.
+
+#### GF.3 — Electron, the first hour
+
+**Look up:** the official Electron tutorial; what Electron bundles (Chromium plus Node) and what that costs in app size; the `main` entry in `package.json`; `app`, `BrowserWindow`, and `loadFile`; and the app lifecycle events (`ready`, `window-all-closed`).
+
+**Build:** a throwaway Electron app that opens one window showing a plain HTML page.
+
+**Do:** open DevTools in the window. Note which process the console you're looking at belongs to, and where the main process's `console.log` output goes instead.
+
+#### GF.4 — Crossing the boundary
+
+**Look up:**
+
+- `ipcMain` and `ipcRenderer`; one-way `send` vs two-way `invoke` and `handle`
+- What a preload script is and when it runs
+- `contextIsolation`, `nodeIntegration`, `sandbox`, and `contextBridge`, as names and what each switch controls. The secure combination is M31's second decision.
+
+**Build:** a button in your page that, when clicked, makes the *main* process log a message. Get it working however the tutorial suggests.
+
+#### GF.5 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **From the renderer's DevTools console, try to use `require`, `process`, or a `BrowserWindow` method.** What's available, and what isn't? Why?
+2. **Look at your `webPreferences`.** What did the tutorial set, and what did you change to get your button working? Write down what each setting would let a malicious script in your page do. That's M31's trap.
+3. **Look up `BrowserWindow`'s options** like `alwaysOnTop`, `transparent`, `frame`, and `minWidth`, but don't wire them to buttons yet.
+4. **Try `transparent: true`** on a throwaway window. What do you see on your OS? Any quirks?
+
+#### GF.6 — Hand-off: what's yours in M31
+
+| Ground Floor left this… | M31 asks you to… |
+|---|---|
+| One IPC message | Drive window control from the UI, on the correct side of the boundary |
+| Whatever `webPreferences` got your button working | No Node in the renderer; expose only specific commands |
+| `transparent` tried once | Decide real transparency vs a translucent look |
+| The default frame | Decide frame vs frameless, and what frameless costs |
+| A default size | Set a default size with sensible bounds |
+| No toggles | Toggle always-on-top and transparency |
+
+Then read the Briefing below.
+
+#### GF.7 — Check yourself before moving on
+
+- Name the two process types and what each owns.
+- Where does the main process's `console.log` go?
+- What's a preload script, and when does it run?
+- `send` vs `invoke`: which one gets an answer back?
+- What can the renderer touch with `nodeIntegration` on?
 
 ### Briefing
 
@@ -2935,6 +5689,92 @@ Open the app. **The number:** does the window honor its default size and min/max
 > - The firmware runs continuously without exhausting memory or hanging.
 
 **Anchors:** _The Machine Under Everything_ — the floor _below_ its floor: memory-mapped I/O, direct hardware; M18 (manual memory, but with far less headroom) and M19 (the loop that never stops); the sovereignty thread.
+
+### Ground Floor — A computer with no operating system
+
+*Read this before the Briefing. It assumes C from M18 and M19, but not that you've flashed a board or talked to hardware over a bus. You'll blink an LED, print over serial, light the OLED, and list files on the SD card, each on its own, first. This tells you what each piece is for and what to look up, never how to write it. The framework, loop structure, memory strategy, rendering approach, bus sharing, and UI are the module's.*
+
+#### GF.1 — The picture first
+
+```
+your laptop ──USB──▶ ESP32 (flash + RAM measured in KB, no OS)
+   │                     │
+   │ serial monitor ◀────┤  setup()   runs once
+   │                     │  loop()    runs forever
+                         │
+                         ├── I2C (2 wires: SDA, SCL) ──▶ OLED display  (pixels)
+                         └── SPI (4 wires: MOSI, MISO, SCK, CS) ──▶ microSD  (FAT filesystem)
+```
+
+No processes, no files unless you mount them, no screen unless you draw it.
+
+#### GF.2 — Your board, first
+
+**Look up:** the exact ESP32 board you have (there are many variants); its pinout diagram; which pins are safe to use and which are strapping pins; and how much RAM and flash it has.
+
+**Look up:** *The Machine Under Everything* on memory-mapped I/O, as the floor below this one.
+
+#### GF.3 — A toolchain, any toolchain
+
+**Do:** install a toolchain and flash the classic "blink" program. Arduino IDE or PlatformIO are the fastest ways to get there. Choosing your real framework is M32's first decision, so treat this one as disposable.
+
+**Look up:** what "flashing" means; the USB driver your board needs; boot mode and the BOOT/EN buttons; and the serial monitor, including baud rate.
+
+**Do:** print a counter over serial once a second.
+
+**Question to settle:** your blink program has a `delay()` in it. What else can the chip do while it's in that `delay`?
+
+#### GF.4 — Buses, as concepts
+
+**Look up:**
+
+- I2C: two wires, device addresses, and running an I2C scanner to find what's connected
+- SPI: four wires, chip select, and how several devices can share one bus
+- Pull-up resistors, as a concept
+- 3.3V vs 5V logic, and why connecting the wrong one can damage the ESP32
+
+#### GF.5 — The OLED on its own
+
+**Do:** wire the OLED, run an I2C scanner to find its address, and draw one line of text with the display's common library (for an SSD1306, the Adafruit or U8g2 libraries).
+
+**Look up:** the display's resolution and how many bytes a full-screen 1-bit framebuffer takes; and what "send the buffer to the display" means in that library.
+
+#### GF.6 — The SD card on its own
+
+**Do:** format a microSD card as FAT32, put a few text files on it, wire the SD module, and list the files over serial with the framework's SD library.
+
+**Look up:** FAT32 and why microcontrollers use it; mounting; and the common mount-failure causes (wiring, card size, speed, formatting).
+
+#### GF.7 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Print free heap memory over serial** after boot, after initializing the display, and after mounting the SD. How much is left? That's M32's memory decision.
+2. **Make a simple animation** (a moving dot) on the OLED with `delay()` between frames. Then add an SD file read inside the loop. What happens to the animation? That's M32's trap.
+3. **Build a long `String` in a loop** and print free heap as you go. What happens?
+4. **Pull the SD card out while running, then reset.** What does your mount code do?
+5. **Try running the display and SD at once.** Are they on separate buses, or sharing one? That's the bus decision.
+
+#### GF.8 — Hand-off: what's yours in M32
+
+| Ground Floor left this… | M32 asks you to… |
+|---|---|
+| A disposable toolchain | Choose a framework and defend it |
+| `delay()`-paced loops | A loop where SD I/O never freezes the animation |
+| `String`s and default allocation | A memory strategy that survives running for days |
+| A dot redrawn however | Choose a rendering approach that fits in RAM without flicker |
+| Display and SD tested separately | Run both together, with a bus plan and mount-failure handling |
+| Files listed over serial | A browse-and-select interface, on screen or over serial |
+
+Then read the Briefing below.
+
+#### GF.9 — Check yourself before moving on
+
+- What do `setup()` and `loop()` each do, and who calls them?
+- I2C or SPI: which uses addresses, and which uses chip select?
+- How many bytes is a full framebuffer for your OLED?
+- How much free heap did you have after the display and SD were both initialized?
+- What happened to your animation when you added an SD read?
 
 ### Briefing
 
@@ -3012,6 +5852,84 @@ _Two modules about the network from opposite ends: build one that needs no infra
 
 **Anchors:** the networking primer in your project (for the TCP/IP contrast); the sovereignty thread; your permacomputing instincts.
 
+### Ground Floor — Keys as addresses
+
+*Read this before the Briefing. It assumes Python and the networking primer's TCP/IP basics, but not that you've used public-key identities or run a mesh stack. You'll install Reticulum, run its daemon, and use its bundled tools to see two nodes find each other first. This tells you what each piece is for and what to look up, never how to write it. Transport, packet vs link, discovery, identity persistence, and trust are the module's.*
+
+#### GF.1 — The picture first
+
+```
+The internet you know:         someone ASSIGNS you 203.0.113.7
+                               DNS turns names into those numbers
+                               packets cross infrastructure others own
+
+Reticulum:                     you GENERATE a keypair  ──▶ that's your IDENTITY
+                               a DESTINATION is derived from it (a hash, not an IP)
+                               you ANNOUNCE it; announces spread hop by hop
+                               others learn a PATH toward your destination
+                               traffic is encrypted to your key, end to end
+                               over ANY medium: TCP, LoRa radio, serial
+```
+
+#### GF.2 — Public-key cryptography, as concepts
+
+**Look up:**
+
+- Public and private keys: what each is for, and which one you never share
+- Encrypting to someone vs signing something yourself
+- A hash: a fixed-length fingerprint of data
+- Why "the key is the identity" means there's no password reset
+
+**Question to settle:** if your address is derived from your public key, what happens to your address if you lose the private key and make a new one?
+
+#### GF.3 — The internet's assumptions, made visible
+
+**Look up**, in the networking primer: IP addressing, DHCP, NAT, and DNS. For each, write one line on who controls it and what happens when it's unavailable.
+
+#### GF.4 — Reticulum, installed
+
+**Look up:** the Reticulum manual's introduction and its "Understanding Reticulum" chapter; the `rns` Python package; `rnsd`, the daemon; where Reticulum keeps its config file; and interface types, especially the TCP interfaces used for testing.
+
+**Do:** install it in a virtual environment, start `rnsd`, and read the config file it generated.
+
+#### GF.5 — Two nodes, using only the bundled tools
+
+**Do:** set up two Reticulum instances that can reach each other, on one machine with separate config directories or on two machines over TCP. Then use the bundled utilities (`rnstatus`, `rnpath`, `rnprobe`) to see their interfaces and to probe one from the other.
+
+**Look up:** what each utility shows; and what an announce is and how often one happens.
+
+Don't write any code against the RNS API yet. The module is where you do that.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Find a destination hash** in the tools' output. Compare it with an IP address. What's different about where it came from?
+2. **Stop one node and restart it.** How does the other one find it again, and how long does that take?
+3. **Find where the identity file lives.** Delete it (in your throwaway config only) and restart. What changed? That's M33's identity-persistence decision.
+4. **Ask yourself how you know the node you probed is the one you meant.** Nothing told you. That's the trust decision.
+
+#### GF.7 — Hand-off: what's yours in M33
+
+| Ground Floor left this… | M33 asks you to… |
+|---|---|
+| A TCP test setup | Choose a transport for building now and for the real use later |
+| Bundled tools only | Write code against the RNS API: Identity, Destination, announce |
+| No messages sent | Send one, choosing Packet, Link, or Resource |
+| Announces watched | Decide how nodes discover each other |
+| A deleted identity file | Decide how identity persists |
+| A probe you trusted blindly | Decide how you verify who you're talking to |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What's the difference between encrypting to a key and signing with one?
+- What does a destination hash derive from?
+- Who assigns your IP address, and who assigns your Reticulum address?
+- How did your restarted node get found again?
+- What happened when you deleted the identity file?
+
 ### Briefing
 
 Let's start from the ground. A _network stack_ is the layers of software that move messages between computers. The internet's stack makes big assumptions: your device is handed an **IP address** by someone (your router, your ISP), names like `example.com` are translated to addresses by **DNS** servers, and your packets travel through infrastructure owned by companies. That works beautifully — until the infrastructure is down, censored, or absent.
@@ -3071,6 +5989,86 @@ Two nodes locally over the TCP interface. **The number:** can node A address nod
 > - You can name several categories of covert channel and say, honestly, which ones a connection-listing monitor can and cannot catch.
 
 **Anchors:** the networking primer; the security material from M4; your Security+ track. _This is strictly defensive — watching your own machine — and the honest-verb discipline applies: you'll be fluent in the posture and concepts, not a threat-hunting expert._
+
+### Ground Floor — What a connection looks like to the OS
+
+*Read this before the Briefing. It assumes the networking primer's TCP/IP basics, but not that you've read your own machine's socket table or mapped connections to processes. You'll list and watch your own connections with the standard tools first, all on your own machine. This tells you what each piece is for and what to look up, never how to write it. The data source, baseline, what counts as suspicious, polling vs events, and honest scope are the module's. Everything here stays defensive and stays on your own device.*
+
+#### GF.1 — The picture first
+
+```
+your machine
+├── process: browser (pid 4120) ── socket ── 192.168.1.20:51544 ──▶ 142.250.x.x:443  ESTABLISHED
+├── process: sshd    (pid 880)  ── socket ── 0.0.0.0:22          (LISTEN, waiting for others)
+└── process: ???     (pid 6612) ── socket ── 192.168.1.20:53001 ──▶ 203.0.113.9:8443 ESTABLISHED
+
+The kernel keeps this table. Tools like ss, netstat, and lsof read it for you.
+```
+
+#### GF.2 — Sockets and ports, from zero
+
+**Look up:**
+
+- A socket, a port, and the 4-tuple (local address, local port, remote address, remote port)
+- TCP connection states: `LISTEN`, `ESTABLISHED`, `TIME_WAIT`, `CLOSE_WAIT`
+- Well-known ports vs ephemeral ports
+- TCP vs UDP, and why UDP "connections" look different in these tools
+
+#### GF.3 — Reading your own socket table
+
+**Do:** on your own machine (WSL, Linux, or macOS), list connections with `ss -tunap` or `netstat`, and with `lsof -i`. On Windows itself, try `netstat -ano` and Resource Monitor.
+
+**Look up:** what each flag does; why you need elevated privileges to see other users' processes; and `/proc/net/tcp` on Linux, as the raw source those tools read.
+
+**Do:** open one new website, then list connections again and find the new ones.
+
+#### GF.4 — Process to connection
+
+**Look up:** process IDs; mapping a pid to a program name and command line; and the `psutil` Python library's process and connection functions, as names. Choosing your data source is M34's first decision.
+
+**Do:** for three connections on your machine, find the owning process and say what it is.
+
+#### GF.5 — The threat landscape, as vocabulary
+
+**Look up**, at the level of definitions only:
+
+- Covert channels: storage vs timing channels
+- DNS tunneling: why DNS is an attractive hiding place
+- Protocol piggybacking, or "living off the land"
+- Rootkits, and why one can hide from the very tools you just used
+- Beaconing: regular check-ins from malware to its controller
+
+This is the vocabulary you'll use to say honestly what your monitor can't see. You won't build any of these.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Count your established connections right now.** Then leave the machine idle for ten minutes and count again. How many did you recognize? That's the noise M34 has to live with.
+2. **Open and close a site.** How long did its connections stay in the table, and in which states?
+3. **Find a connection you can't explain.** Look up the process. Was it benign? Most are. That's M34's second trap.
+4. **Take two snapshots ten seconds apart.** What would a short-lived connection that opened and closed between them look like? That's the polling decision.
+5. **Go back to your GF.5 list.** Which of those would show up in `ss` at all? That's M34's honest-scope decision.
+
+#### GF.7 — Hand-off: what's yours in M34
+
+| Ground Floor left this… | M34 asks you to… |
+|---|---|
+| Tools run by hand | Choose a data source for the monitor |
+| Connections counted | Build a baseline of normal |
+| One unexplained connection, probably benign | Decide what's worth flagging, without alert fatigue |
+| Two snapshots and a gap | Choose polling vs event-driven |
+| Covert-channel vocabulary | Say honestly what a socket listing can and can't catch |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What's a socket's 4-tuple?
+- What does `LISTEN` mean, and what does `ESTABLISHED` mean?
+- How did you map a connection to its owning process?
+- How many established connections did your idle machine have?
+- Why can't a rootkit-hidden connection be found with `ss`?
 
 ### Briefing
 
@@ -3137,6 +6135,83 @@ _The rigor under the algorithms, and the machine under the Observable. M35 is a 
 > - You can state, out loud, why a proof establishes something for _all_ cases, not just the ones you checked.
 
 **Anchors:** `functions_and_proofs_slow_walk.md` (the primary text for this module); your discrete-math docs (`Chapter_3_extended`, the Discrete Math guides). This is a _study_ module — no code required, though tying a proof to code you wrote is ideal.
+
+### Ground Floor — The language proofs are written in
+
+*Read this before the Briefing. It assumes nothing beyond school algebra. Before you can write a proof, you have to read and write the statements proofs are about. You'll translate, negate, and truth-table small statements first, without proving anything. This tells you what each piece is for and what to look up. The proofs themselves, and choosing a technique for each, are the module's.*
+
+#### GF.1 — The picture first
+
+```
+A CLAIM          "For every integer n, if n is odd then n² is odd."
+                    │            │          │
+                 quantifier   hypothesis  conclusion
+                 (for all)       P     ⇒     Q
+
+DEFINITIONS      "odd" means: n = 2k + 1 for some integer k
+                 every proof step eventually cashes out in a definition
+
+A PROOF          a chain of steps from what's assumed to what's claimed,
+                 each step justified by a definition, an axiom, or an earlier result
+```
+
+You can't prove a claim you can't restate precisely. That's what this Ground Floor is for.
+
+#### GF.2 — Propositions and connectives
+
+**Look up:** `functions_and_proofs_slow_walk.md` and the discrete-math docs in this project, on logic. Then make sure you can explain:
+
+- A proposition: a statement that is true or false
+- AND, OR, NOT, and implication (if P then Q), and the truth table for each
+- Why "if P then Q" is true whenever P is false (this surprises everyone; sit with it)
+- The converse, the inverse, and the contrapositive of an implication
+
+**Do:** write out the full truth tables for "P ⇒ Q" and "not Q ⇒ not P" and compare them column by column. Don't prove anything with that yet. Just notice.
+
+#### GF.3 — Quantifiers
+
+**Look up:** "for all" (∀) and "there exists" (∃); how to negate each; and how to negate a nested statement such as "for every x there is a y with x < y."
+
+**Do:** negate five statements in plain English, then in symbols. For example, "every function in this file has a test" and "some loop in this program never terminates."
+
+#### GF.4 — Definitions, written exactly
+
+**Look up:** the precise definitions of even, odd, divides, prime, and rational number.
+
+**Do:** for each one, write the definition in the form "n is even means there exists an integer k such that ...". Every proof in M35 starts by unpacking definitions like these.
+
+#### GF.5 — Functions, rigorously
+
+**Look up:** function, domain, codomain, and range; and the definitions of injective, surjective, and bijective.
+
+**Do:** for three functions you've used in code (a hash function, a function that squares an integer, a function that turns a string into lowercase), say whether each is injective and whether it's surjective, giving its domain and codomain first.
+
+#### GF.6 — Reading proofs before writing them
+
+**Look up:** a short worked proof in the slow-walk doc. Read it one line at a time, and for each line, write which definition, earlier fact, or rule of logic justifies it.
+
+**Question to settle:** was there a step where the justification was "it's obvious"? Could you replace it with a real one?
+
+#### GF.7 — Hand-off: what's yours in M35
+
+| Ground Floor left this… | M35 asks you to… |
+|---|---|
+| Truth tables compared, nothing proved | Write a direct proof and a proof by contrapositive, choosing which fits |
+| Negations practiced | Write a proof by contradiction |
+| Definitions written out | Use them as the steps of every proof |
+| Induction not yet touched | Write an induction proof with a sound base case and step |
+| Injective and surjective classified | State one function property rigorously |
+| One "obvious" step found | Leave no gaps anywhere |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- Why is "if P then Q" true when P is false?
+- What's the contrapositive of "if it compiles, the tests pass," and is it equivalent to the original?
+- Negate "for every x, there exists a y such that x < y."
+- Write the definition of odd, exactly.
+- Is a hash function from strings to 32-bit integers injective? Why or why not?
 
 ### Briefing
 
@@ -3208,6 +6283,90 @@ The real test is reproduction. **The number:** can you, on a blank page with no 
 > - The C portions are valgrind-clean — no leaks in the callback chain.
 
 **Anchors:** _Waiting, All the Way Up_ (streams, the event loop — M5 was written on top of this); M5 (RxJS — this is its floor); M18 (manual memory and ownership).
+
+### Ground Floor — Bytes as they arrive, and callbacks in C
+
+*Read this before the Briefing. It assumes M18's C memory discipline and M5's use of RxJS, but not that you've read input incrementally or written a callback in C. You'll process stdin in chunks and pass functions as values first, plus get a minimal C++ program compiling. This tells you what each piece is for and what to look up, never how to write it. The Observable protocol, ownership of teardown, hot vs cold, operators, backpressure, and error flow are the module's.*
+
+#### GF.1 — The picture first
+
+```
+some producer ──bytes over time──▶ [ read() fills a small buffer ] ──▶ process this chunk ──▶ repeat
+                                     never the whole file at once           until EOF
+
+callback:    you hand a FUNCTION to someone else's code;
+             THEY decide when to call it.
+
+   your code:  register(on_line)        their code:  for each line: on_line(line)
+```
+
+The second picture, turned into a protocol with a lifecycle, is what an Observable is.
+
+#### GF.2 — Streams in C
+
+**Look up:**
+
+- File descriptors, and stdin as descriptor 0
+- `read()` vs `fread()`, and why the number of bytes you get back can be less than you asked for
+- EOF, and how each function reports it
+- Pipes in the shell, so `cat bigfile | ./yourprog` feeds you a stream
+
+**Build:** a C program that counts bytes and lines from stdin using a small fixed-size buffer, refilled in a loop. Feed it a large file through a pipe and confirm memory stays small. Check it with Valgrind.
+
+**Question to settle:** a line can be split across two chunks. What does your program need to remember between reads?
+
+#### GF.3 — Functions as values in C
+
+**Look up:** function pointer syntax (and `typedef` to make it readable); the C standard library's `qsort`, as a function that takes a callback; and the `void *` context pattern for passing state into a callback.
+
+**Build:** a function that takes a function pointer and calls it once per line of input. Write two different callbacks and pass each in. Then make one callback count something, using a context pointer instead of a global.
+
+Don't turn this into an Observable. Choosing how callbacks carry state is M36's first decision; you just need to know how the C version works.
+
+#### GF.4 — C++, the first hour
+
+**Look up:** compiling C++ with `g++` or `clang++` and a `-std=` flag; classes, constructors, and destructors; and when a destructor runs for a stack object.
+
+**Look up**, as names to recognize: lambdas and captures, `std::function`, templates, and RAII. These are the C++ tools M36's decisions are about.
+
+**Build:** a small class whose constructor and destructor each print a line. Create one in a nested scope and watch when each line prints.
+
+#### GF.5 — Revisit RxJS with new eyes
+
+**Do:** go back to M5's Observable scratch code. Write down, in plain words: who calls `next`, who wrote the function being called, and what happens when you unsubscribe.
+
+**Question to settle:** is an Observable more like your chunked reader, or more like your callback-taking function? Or both?
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Run your chunked reader on a huge file.** Did memory stay flat?
+2. **In your callback program, free the context while something still holds a pointer to it,** then run under Valgrind. That's the M18 bug family inside a callback chain.
+3. **Make your callback slow** (add a sleep). What happens to reading? Does input pile up anywhere? That's backpressure, M36's fifth decision.
+4. **Ask how you'd tell the producer to stop** before EOF. Your current code has no way. That's teardown.
+
+#### GF.7 — Hand-off: what's yours in M36
+
+| Ground Floor left this… | M36 asks you to… |
+|---|---|
+| A chunked reader | The C stage, processing bytes incrementally into something useful |
+| C callbacks with a context pointer | Decide how callbacks carry state in C and in C++ |
+| No way to stop early | Subscriptions with a teardown, and clear ownership |
+| A producer that always runs | Decide hot vs cold |
+| One callback, no chain | Build `map` and `filter` as wrappers around a source |
+| A slow consumer, unhandled | Decide about backpressure |
+| No error path | Propagate errors down the chain |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- Why can `read()` return fewer bytes than you asked for?
+- What did your reader remember between chunks, and why?
+- Write, in words, the type of a function pointer that takes a `const char *` and a `void *` and returns nothing.
+- When did your C++ object's destructor print?
+- In RxJS, who calls `next`, and who wrote the function it calls?
 
 ### Briefing
 
@@ -3286,6 +6445,82 @@ _One module that is your own portfolio thesis made concrete: instruments that ma
 > - You can explain the SVG-vs-canvas hit-testing tradeoff and which you chose and why.
 
 **Anchors:** M17 (the render loop, 3D, `requestAnimationFrame`); M15/M16 (rendering and layout); M6 and M43 (where interaction state lives); your Steppe and dev-suite work, which this generalizes.
+
+### Ground Floor — Shapes you can point at
+
+*Read this before the Briefing. It assumes M16 and M17's Ground Floors on canvas and frames, but not that you've built interactive graphics or modeled a graph. You'll draw the same small throwaway graph twice, in SVG and on a canvas, and drag nodes in one of them first. This tells you what each piece is for and what to look up, never how to write it. Render target, hit-testing, the diagram interface, layout, step animation, and state are the module's.*
+
+#### GF.1 — The picture first
+
+```
+DATA:        nodes [A, B, C, D, E]   edges [A–B, A–C, B–D, C–D, D–E]
+                 │
+                 ▼  render
+SVG:         <circle> per node, <line> per edge   ← each is a DOM element
+             the browser knows which one the mouse is over
+
+CANVAS:      one bitmap; you painted circles and lines into it
+             the browser knows only (x, y) — "which node?" is your problem
+                 │
+                 ▼  interact
+pointer events ──▶ which shape? ──▶ update state ──▶ re-render
+```
+
+#### GF.2 — Graphs as data
+
+**Look up:** nodes and edges; directed vs undirected; adjacency lists vs adjacency matrices; and how you'd represent each in TypeScript.
+
+**Build:** a throwaway five-node graph as a plain data structure, with a position for each node.
+
+#### GF.3 — SVG, the first hour
+
+**Look up:** `viewBox` and SVG's coordinate system; `<circle>`, `<line>`, `<g>`, and `<text>`; styling SVG with CSS; and attaching pointer events to individual SVG elements.
+
+**Build:** render your graph in SVG from the data. Highlight a node when the pointer is over it.
+
+#### GF.4 — The same graph on canvas
+
+**Look up:** drawing circles (`arc`) and lines (`moveTo`, `lineTo`, `stroke`) on a 2D canvas; device pixel ratio (from M16's Ground Floor); and converting a pointer event's coordinates into canvas coordinates using the element's bounding rectangle.
+
+**Build:** render the same graph on a canvas. Log the canvas coordinates of every click.
+
+#### GF.5 — Dragging
+
+**Look up:** `pointerdown`, `pointermove`, `pointerup`; pointer capture (`setPointerCapture`) and why it matters when the pointer leaves the shape mid-drag; and redrawing on `requestAnimationFrame` rather than on every move event.
+
+**Build:** make the SVG nodes draggable, with edges following.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **On the canvas version, try to highlight the node under the pointer.** You have only coordinates. How would you know which node it is? That's M37's trap.
+2. **Generate a graph of a few thousand nodes** and render it both ways. Drag in SVG and watch the frame rate. That's the render-target decision.
+3. **Your node positions were typed in by hand.** For a graph you didn't design, who decides where nodes go? That's the layout decision.
+4. **Try to put your SVG graph on a second page.** How much did you have to copy? That's the composability wall.
+5. **Where does "which node is selected" live right now?** That's the state decision.
+
+#### GF.7 — Hand-off: what's yours in M37
+
+| Ground Floor left this… | M37 asks you to… |
+|---|---|
+| Two renderers compared | Choose SVG, canvas, or WebGL, and explain the hit-testing tradeoff |
+| Canvas clicks with no idea what was hit | Design hit-testing, if you choose canvas or WebGL |
+| A one-off graph | A diagram as a reusable object with a clean interface |
+| Hand-typed positions | Choose a layout approach |
+| Static drawings | Decide whether and how to animate algorithm steps |
+| State wherever it landed | A state model that stays in sync as you interact |
+| Five nodes | A non-trivial graph at ~60fps |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- Adjacency list or matrix: which uses less memory for a sparse graph?
+- What does an SVG `viewBox` do?
+- How do you convert a pointer event's coordinates into canvas coordinates?
+- Why does pointer capture matter during a drag?
+- On a canvas, how does the browser know which node you clicked?
 
 ### Briefing
 
@@ -3366,6 +6601,90 @@ _Five modules resurrected from the v2 lineup — the job-market breadth that got
 
 **Anchors:** M1 (the written contract is the spec; its curl suite is the test); the contract thread. _A named MS exception._
 
+### Ground Floor — .NET from zero
+
+*Read this before the Briefing. It assumes M1's Ground Floor, so the controller → service → repository idea and the contract are familiar, but not that you've written C# or run .NET. You'll serve the throwaway `books` list from a minimal API first. This tells you what each piece is for and what to look up, never how to write it. Minimal API vs controllers, DI lifetimes, `IEnumerable` vs `IQueryable`, DTOs, and nullability are the module's.*
+
+#### GF.1 — The picture first
+
+```
+the dotnet CLI starts your app
+   └─ one startup file
+        ├─ REGISTER services with the DI CONTAINER, each with a LIFETIME
+        ├─ BUILD the app
+        ├─ MAP routes: a URL + a handler; the container supplies what the handler asks for
+        └─ RUN: Kestrel, the built-in web server, starts listening
+```
+
+Same shape as Spring in M1: a container builds your objects and hands them to routes. The vocabulary and the defaults differ.
+
+#### GF.2 — C# for a Java developer
+
+**Look up:** a "C# for Java developers" comparison, then specifically:
+
+- Properties vs Java getters and setters
+- `record` types in C#
+- `var`, and C#'s type inference
+- `async`/`await` and `Task`, compared with Java's `CompletableFuture`
+- Namespaces and `using`
+
+#### GF.3 — The .NET toolchain
+
+**Do:** install the .NET SDK, then `dotnet new web` a project and run it.
+
+**Look up:** the `dotnet` CLI (`new`, `run`, `build`, `add package`); the `.csproj` file and what's in it; and where Kestrel's port is set.
+
+#### GF.4 — A minimal API
+
+**Look up:** Microsoft's minimal API tutorial; `MapGet` and route parameters; returning results with `Results.Ok` and `Results.NotFound`; and how JSON serialization happens.
+
+**Build:** `GET /api/books` and `GET /api/books/{id}` over an in-memory list, using the simplest code that works.
+
+#### GF.5 — The DI container
+
+**Look up:** registering a service with `AddTransient`, `AddScoped`, and `AddSingleton`, as names and what each lifetime means in plain words.
+
+**Build:** move your list behind a service class, register it, and let a route receive it.
+
+**Question to settle:** you picked a lifetime to get it working. Which one, and why that one? M38's second decision is about choosing on purpose.
+
+#### GF.6 — LINQ, the first hour
+
+**Look up:** LINQ method syntax (`Where`, `Select`, `OrderBy`, `ToList`); query syntax as the alternative form; and what "deferred execution" means, as a definition.
+
+**Do:** write a LINQ query over your books, then put a `Console.WriteLine` inside the `Where` lambda and enumerate the result twice.
+
+#### GF.7 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **How many times did your `Where` lambda print** when you enumerated twice? That's M38's trap.
+2. **Inject a scoped service into a singleton** in a throwaway registration and run it. Did .NET complain? In which environment? That's the captive-dependency trap.
+3. **Look at your `.csproj` for `<Nullable>`.** What's the setting? Assign `null` to a non-nullable string and read the warning, if any.
+4. **Your route returns the internal record directly.** Remember M1's first trap.
+
+#### GF.8 — Hand-off: what's yours in M38
+
+| Ground Floor left this… | M38 asks you to… |
+|---|---|
+| A minimal API, because the template made one | Choose minimal API vs controllers |
+| A lifetime picked to make it work | Choose each lifetime deliberately; no captive dependencies |
+| A lambda that printed twice | Show deferred execution and control it |
+| In-memory LINQ only | Understand `IEnumerable` vs `IQueryable` |
+| Records returned directly | Decide on DTOs at the boundary |
+| Nullable as the template set it | Turn nullable reference types on, and know what they catch |
+| `books` | M1's `incidents` contract, passing its curl suite verbatim |
+
+Then read the Briefing below.
+
+#### GF.9 — Check yourself before moving on
+
+- What does `builder.Services` hold, and when are its objects created?
+- Transient, scoped, singleton: describe each lifetime in one plain sentence.
+- What's Kestrel?
+- How many times did your `Where` run when enumerated twice, and why?
+- C# property vs Java getter: what's the difference in how you write and call each?
+
 ### Briefing
 
 .NET is Microsoft's cross-platform runtime and C# its main language; **ASP.NET Core** is its web framework, and it's everywhere in enterprise and finance — which, given your JPMC background, makes it a natural credibility add. Serving your _same_ incidents contract here — a fourth time, after Spring, FastAPI, and GraphQL — proves the contract was real and gives you a C# reference implementation. Define as you go: a **minimal API** (declaring endpoints without controller boilerplate), **dependency injection** (the framework creates and supplies your objects, each with a chosen lifetime), and **LINQ** (a query syntax over collections and databases, with a famous gotcha). The center of gravity is **the contract in a new ecosystem, and .NET's two classic traps.**
@@ -3424,6 +6743,81 @@ Run M1's curl suite verbatim. **The number:** does every response match the cont
 > - You can name which class each vuln belongs to and its standard defense.
 
 **Anchors:** M4 (auth) and M26 (you already met XSS); the networking/security primer; your Security+ track. _Strictly defensive: your own code, your own sandbox. Honest-verb discipline: appsec fundamentals, not a pentester title._
+
+### Ground Floor — The attacker's vocabulary, on your own code
+
+*Read this before the Briefing. It assumes M4 and M26's Ground Floors, so you've met tokens and XSS, but not that you've studied vulnerability classes systematically or run security tooling. You'll read the standard references, run scanners on code you already wrote, and explore a purpose-built practice app first. This tells you what each piece is for and what to look up, never how to exploit or fix anything. Every vulnerability, exploit, fix, and regression test is the module's, and all of it stays on your own code in your own sandbox.*
+
+#### GF.1 — The picture first
+
+```
+untrusted input ──▶ your code ──▶ somewhere it has MEANING
+                                    ├─ a SQL query        → injection
+                                    ├─ an HTML page       → XSS
+                                    ├─ a URL the server fetches → SSRF
+                                    └─ a token check      → auth flaws
+your repo ──▶ git history ──▶ every secret ever committed   → secrets-in-code
+
+Every class is the same shape: data crossing into a place where it's treated as instructions.
+```
+
+#### GF.2 — The standard references
+
+**Look up:**
+
+- The OWASP Top 10: read the current edition's list and one category's page in full
+- CWE (Common Weakness Enumeration), and how a CWE number differs from a CVE
+- The OWASP Cheat Sheet Series index; you'll come back to it
+
+**Do:** for each of the five classes in M39's build, write one sentence: what crosses into what, and what it can make happen.
+
+#### GF.3 — HTTP as an attacker sees it
+
+**Look up:** every part of an HTTP request a client controls (method, path, query, headers, cookies, body); and an intercepting proxy (OWASP ZAP or Burp Suite Community), as a tool for watching and editing requests from your own browser to your own app.
+
+**Do:** run an intercepting proxy against one of your own earlier Gauntlet apps and watch one request pass through it.
+
+#### GF.4 — A practice target that isn't yours
+
+**Look up:** OWASP Juice Shop, a deliberately vulnerable app made for learning, which you run locally.
+
+**Do:** run it locally and complete one or two of its beginner challenges using its own guide. This is the sanctioned place to see exploits work. Your own code comes next, in the module.
+
+#### GF.5 — Scanners
+
+**Look up:** static analysis (SAST) vs dynamic analysis (DAST); Semgrep and Bandit, as SAST tools; and gitleaks or trufflehog, as secret scanners.
+
+**Do:** run a SAST tool over code from an earlier Gauntlet module, and a secret scanner over its git history. Read every finding, true or false.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Read your scanner findings.** Were any real? Were any false positives? Don't fix them yet. Deciding which fixes are real and which are mitigation is M39's sixth decision.
+2. **Look at an earlier endpoint that takes a search or filter parameter.** Trace where that string goes. Does it ever end up inside a query, a page, or a URL?
+3. **Search your own git history** for anything that looks like a password or key, even an old test one. Would deleting the file now remove it?
+4. **Think about a denylist** that blocks "dangerous characters" for one of those destinations. Try to name everything it would need to block. That's M39's trap.
+
+#### GF.7 — Hand-off: what's yours in M39
+
+| Ground Floor left this… | M39 asks you to… |
+|---|---|
+| Five classes defined in a sentence | Introduce each into your own endpoint, in a sandbox |
+| Juice Shop's guided challenges | Exploit your own vulnerable variants |
+| Inputs traced, not changed | Decide validate vs encode, and allowlist vs denylist |
+| Scanner findings read | Fix each vulnerability and get a clean scan |
+| Secrets found in history | Decide where secrets belong |
+| No tests | A regression test guarding each fix |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What's the common shape behind injection, XSS, and SSRF?
+- What's the difference between a CWE and a CVE?
+- SAST vs DAST: which reads code, and which attacks a running app?
+- If a secret was committed and then deleted, is it gone?
+- Name one thing an intercepting proxy lets you change about a request.
 
 ### Briefing
 
@@ -3486,6 +6880,90 @@ For each vulnerability, attempt the exploit before and after the fix. **The numb
 
 **Anchors:** the Python and data-science books; M36 (streams) and M14 (the same laziness instinct); M6 (the hash thread, via memoize's keys).
 
+### Ground Floor — Python's machinery
+
+*Read this before the Briefing. It assumes you write Python comfortably, but not that you've looked under `for` loops, `with` blocks, or `@` signs. You'll take each mechanism apart on small throwaway examples first. This tells you what each piece is for and what to look up, never how to write it. The pipeline, the decorators, the memoize cache, and the context manager are the module's.*
+
+#### GF.1 — The picture first
+
+```
+a for loop        → asks the object for an ITERATOR once,
+                    then asks the iterator for the NEXT item, again and again,
+                    until it signals it's out (an exception you never see)
+
+the @ sign        → shorthand for: "replace this function with whatever
+                    the decorator function returns when handed it"
+
+a with block      → run SETUP, run the block,
+                    then GUARANTEED TEARDOWN, even if the block raised
+```
+
+Three pieces of syntax, three protocols underneath. M40 has you build on each one.
+
+#### GF.2 — Iteration
+
+**Look up:** the iterator protocol (`__iter__` and `__next__`); `StopIteration`; the difference between an iterable and an iterator; and what `iter()` and `next()` do.
+
+**Do:** call `iter` and `next` by hand on a list until it runs out, and read the exception.
+
+#### GF.3 — Generators
+
+**Look up:** `yield`; generator functions vs generator expressions; why a generator can only be consumed once; and `itertools` as a library of lazy building blocks.
+
+**Build:** a generator that yields the numbers from 1 to n, and one that yields lines from a file. Run them.
+
+**Do:** compare memory for `list(range(10_000_000))` vs a generator over the same range, using `sys.getsizeof` and then `tracemalloc`.
+
+#### GF.4 — Functions as values, and closures
+
+**Look up:** first-class functions; inner functions; closures and what they capture; `nonlocal`; and `*args` and `**kwargs`.
+
+**Build:** a function that returns another function that remembers a counter.
+
+**Do:** create three functions in a loop that each return the loop variable, then call all three. What did they return? That's one of M40's traps; don't fix it.
+
+#### GF.5 — Decorator syntax
+
+**Look up:** the `@` syntax as shorthand for reassignment; and `functools.wraps`, and what breaks without it (look at a wrapped function's `__name__`).
+
+Don't write your decorators here. A timing decorator and a memoizing one are the module's build.
+
+#### GF.6 — Context managers
+
+**Look up:** the `with` statement; `__enter__` and `__exit__`, and what `__exit__` receives when the block raises; and `contextlib.contextmanager`, as a name.
+
+**Do:** open a file in a `with` block, raise an exception inside the block, and confirm afterward that the file is closed.
+
+#### GF.7 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Write `def f(x, items=[])`** that appends `x` to `items` and returns it. Call it three times. That's M40's first trap.
+2. **Your three loop-made functions** from GF.4. That's the second.
+3. **Try to use a list as a dict key.** Read the error. That's what M40's memoize has to deal with.
+4. **Consume a generator twice.** What does the second pass give you?
+
+#### GF.8 — Hand-off: what's yours in M40
+
+| Ground Floor left this… | M40 asks you to… |
+|---|---|
+| Toy generators, memory compared | A lazy pipeline over a big file, laziness proven by measurement |
+| Closures and `@` syntax understood | A hand-written `@timed`, and decide whether it takes arguments |
+| An unhashable-key error | A `@memoize` that handles hashable keys |
+| A `with` block that closed a file | Your own context manager owning a resource |
+| A mutable default and late binding, seen | Avoid both in your own code |
+| No type hints | Decide on hints and mypy |
+
+Then read the Briefing below.
+
+#### GF.9 — Check yourself before moving on
+
+- What does a `for` loop call under the hood, and what ends it?
+- Why can a generator only be consumed once?
+- What does a closure capture: the value or the variable?
+- What does `functools.wraps` preserve?
+- What does `__exit__` receive when the `with` block raises?
+
 ### Briefing
 
 Python's real power for data work is a few features that let you process more data than fits in memory, cleanly. Define as you go: an **iterator** (an object you step through one item at a time), a **generator** (a function that _yields_ items lazily, producing each only when asked, so it never holds the whole sequence), a **decorator** (a function that wraps another to add behavior — timing, caching — without changing it), and a **context manager** (the `with` block — sets something up and _guarantees_ teardown, even on error). The center of gravity is **laziness (generators) and Python's closure-based machinery (decorators, context managers)** — the same streaming instinct as M36, in Python.
@@ -3545,6 +7023,90 @@ Run the pipeline on a file much larger than your intended memory — generator v
 
 **Anchors:** M1/M38 (the endpoint it watches, and its error shape); your SRE lane and CI/CD background.
 
+### Ground Floor — Bash, carefully
+
+*Read this before the Briefing. It assumes you've typed plenty of shell commands, but not that you've written a script you'd trust unattended. You'll write a throwaway script that checks one URL first, and break it on purpose. This tells you what each piece is for and what to look up, never how to write it. Error strategy, JSON parsing, retries, rotation, cleanup, scheduling, and parallel checks are the module's.*
+
+#### GF.1 — The picture first
+
+```
+a script file
+  ├─ first line: which interpreter runs it
+  ├─ VARIABLES: set without spaces; read back with a $, inside QUOTES
+  ├─ COMMAND SUBSTITUTION: capture one command's output into a variable
+  ├─ TESTS: compare values, with quoting rules of their own
+  └─ EXIT CODES: every command returns one; 0 means success, anything else means failure
+```
+
+Almost every bash bug is a quoting bug or an exit-code bug.
+
+#### GF.2 — Scripts, from zero
+
+**Look up:** the shebang line; `chmod +x`; running `./script.sh` vs `bash script.sh`; exit codes and `$?`; and `&&` and `||`.
+
+**Do:** run a command that fails and print `$?`.
+
+#### GF.3 — Variables and quoting
+
+**Look up:**
+
+- Assignment, and why `x = 1` fails
+- Single vs double quotes, and what expands inside each
+- Word splitting and globbing on unquoted variables
+- Command substitution `$(...)`
+- Arrays in bash, as the safe way to hold several values
+
+**Do:** set a variable to a filename containing a space, then pass it unquoted and quoted to `ls`. Compare.
+
+#### GF.4 — Conditionals, loops, functions
+
+**Look up:** `if`, `[ ]` vs `[[ ]]`, `for` and `while`, `case`, and defining and calling functions with arguments (`$1`, `$@`, and why `"$@"` is quoted).
+
+#### GF.5 — The tools a watchdog uses
+
+**Look up:** `curl` flags for silent output and for printing just the status code; `jq` basics for pulling a field out of JSON; `sleep`; and `date` for timestamps in logs.
+
+**Build:** a throwaway script that checks one URL from an earlier Gauntlet API once and prints a timestamped line with the status.
+
+#### GF.6 — shellcheck
+
+**Look up:** installing shellcheck, running it, and reading its SC codes (each links to an explanation).
+
+**Do:** run it on your throwaway script and read every finding.
+
+#### GF.7 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Your shellcheck findings.** How many were quoting? M41 requires zero findings.
+2. **Add `set -e` at the top,** then put a failing command inside an `if` condition and another in a pipeline. Did the script stop? That's M41's trap.
+3. **Make the script write a temp file, sleep, then delete it.** Press Ctrl-C during the sleep. Is the temp file still there? That's what `trap` is for.
+4. **Kill the API and run the script.** What did it report? What should a watchdog do next?
+5. **Run it in a loop for a while,** appending to a log. Where is the log heading in a week?
+
+#### GF.8 — Hand-off: what's yours in M41
+
+| Ground Floor left this… | M41 asks you to… |
+|---|---|
+| One check, once | A watchdog polling your endpoint over time |
+| `set -e` tested and found wanting | Choose an error strategy that covers the gaps |
+| A status code from `curl` | Parse the response JSON with `jq`, and decide why not `grep` |
+| A dead API reported once | Retry with backoff |
+| A log that grows forever | Rotate logs |
+| A temp file left behind | Clean up with `trap` |
+| Run by hand | Choose cron or a systemd timer, and decide when bash isn't enough |
+| Some shellcheck findings | Zero |
+
+Then read the Briefing below.
+
+#### GF.9 — Check yourself before moving on
+
+- Why does `x = 1` fail in bash?
+- What's the difference between `"$var"` and `$var` when the value contains a space?
+- What does `$?` hold right after a command?
+- Name a place where `set -e` doesn't stop the script.
+- What did Ctrl-C leave behind?
+
 ### Briefing
 
 Bash is the glue language of operations — health checks, deploys, cron jobs on every server. It's also famous for silent, dangerous bugs, so writing it _safely_ is a real skill and a natural fit for your SRE lane. Define as you go: **word splitting** (the shell splits an unquoted `$var` on spaces, so a value with a space becomes two arguments — a huge bug source), **`set -euo pipefail`** (flags that make the shell fail loudly on errors, undefined variables, and failed pipes — with pitfalls of their own), **`trap`** (run cleanup when the script exits or is interrupted), and **`jq`** (parse JSON on the command line). The center of gravity is **safe shell — quoting, error handling, cleanup — around a real watchdog.**
@@ -3602,6 +7164,80 @@ Run `shellcheck`. **The number:** zero findings? Then send SIGINT mid-run and co
 > - The report is visually restrained — taste, not clutter.
 
 **Anchors:** the data-viz instincts from your React work; M2/M8 (the analytics data this can consume). _A named MS exception, kept separate from your engineering-portfolio narrative per your own positioning._
+
+### Ground Floor — Power BI, from zero
+
+*Read this before the Briefing. It assumes you know SQL tables and joins, but not Power BI or DAX. You'll load a throwaway CSV and build one page with one measure first. This tells you what each piece is for and what to look up, never how to build the real report. Import vs DirectQuery, the model, measures vs columns, cardinality, and restraint are the module's.*
+
+#### GF.1 — The picture first
+
+```
+Power BI Desktop
+ ├─ GET DATA        CSV, database, web…
+ ├─ POWER QUERY     clean and shape each table (its own language: M)
+ ├─ MODEL VIEW      tables + RELATIONSHIPS between them
+ ├─ DAX             MEASURES and calculated COLUMNS
+ └─ REPORT VIEW     visuals, slicers, pages
+        │
+        ▼
+ every visual asks every measure a question, under the FILTERS active right there
+```
+
+#### GF.2 — Getting it running
+
+**Look up:** Power BI Desktop's system requirements. It runs on Windows only, so on your setup it's the Windows side, not WSL. Also look up the free license vs what publishing to the Power BI service needs.
+
+**Do:** install it and open one of Microsoft's sample reports to click around.
+
+#### GF.3 — Loading and shaping data
+
+**Look up:** Get Data from a CSV; the Power Query editor; changing column types; and why a wrong type (a number stored as text) quietly breaks things later.
+
+**Do:** load a small throwaway CSV of sales rows (date, product, region, amount, for example) and set every column's type.
+
+#### GF.4 — The model
+
+**Look up:** model view; relationships between tables; one-to-many, as a concept; and what a fact table and a dimension table are, as definitions. Whether you'll use a star schema is M42's second decision.
+
+**Do:** split your CSV into two tables, such as sales and products, and relate them.
+
+#### GF.5 — A first measure and a first page
+
+**Look up:** DAX basics: `SUM`, `COUNTROWS`, and writing a measure; the difference between a measure and a calculated column, as definitions only; and the basic visuals (card, bar chart, table) and slicers.
+
+**Build:** a measure for total sales. Put it on a card, in a bar chart by region, and in a table by product. Add a slicer for region.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Look at your total-sales measure in the card, in each bar, in each table row, and in the table's total row.** It's one formula giving several different numbers. Why? That's filter context, M42's trap.
+2. **Use the slicer.** Which visuals changed, and which didn't?
+3. **Make a calculated column that does the same sum** and put it on the same visuals. Compare the numbers. That's the measure-vs-column decision.
+4. **Change your relationship's cardinality or direction** in a throwaway copy. What broke?
+5. **Add five more visuals to the page.** Is it better? That's the restraint decision.
+
+#### GF.7 — Hand-off: what's yours in M42
+
+| Ground Floor left this… | M42 asks you to… |
+|---|---|
+| A CSV imported | Choose Import vs DirectQuery |
+| Two related tables | Design a small model, star or flat |
+| One measure, numbers you couldn't explain | A few DAX measures, and explain filter context on one |
+| A column and a measure compared | Know which tool fits each metric |
+| A relationship you broke on purpose | Get cardinality right |
+| One slicer | Slicers and one drill-through |
+| A cluttered page | A restrained, publish-ready dashboard |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What's Power Query for, and what's DAX for?
+- What does a relationship let a visual do?
+- Measure vs calculated column: which recomputes when you filter?
+- Why did your one measure show different numbers in different places?
+- What did changing the relationship break?
 
 ### Briefing
 
@@ -3668,6 +7304,77 @@ _Four modules resurrected from the v2 lineup — the craft and identity work: re
 
 **Anchors:** _Waiting, All the Way Up_ (the event loop — the batching is its payoff); M5 (RxJS — this is a sibling floor); M36 (rebuilding an abstraction from scratch).
 
+### Ground Floor — Intercepting reads and writes
+
+*Read this before the Briefing. It assumes JavaScript and React, but not that you've used a Proxy or thought about when the browser runs queued work. You'll log every read and write on an object and update a widget by hand first. This tells you what each piece is for and what to look up, never how to write it. The tracking mechanism, batching, delegation, state shape, and where to stop are the module's.*
+
+#### GF.1 — The picture first
+
+```
+WITHOUT reactivity:   state.count++  ──▶  (nothing happens)  ──▶  you call render()  yourself
+
+WITH reactivity:      state.count++  ──▶  something NOTICES the write
+                                     ──▶  knows which functions READ count last time
+                                     ──▶  re-runs them   ──▶  the DOM updates
+
+The questions:  how do you notice a read?  how do you notice a write?
+                and WHEN do you re-run — right now, or a moment later?
+```
+
+#### GF.2 — Proxy and Reflect
+
+**Look up:** MDN on `Proxy`: the handler object and its `get` and `set` traps; `Reflect.get` and `Reflect.set`; and what a Proxy does and doesn't intercept for nested objects.
+
+**Build:** a throwaway Proxy that logs every property read and write on an object. Read and write a few properties, including a nested one, and watch the log.
+
+#### GF.3 — `this`, and closures that go stale
+
+**Look up:** how `this` is set in regular functions, arrow functions, methods, and event handlers; `bind`; and how a closure can hold an out-of-date value.
+
+**Do:** pass an object's method as an event handler and log `this` inside it.
+
+#### GF.4 — When queued work runs
+
+**Look up:** *Waiting, All the Way Up* on the event loop; then the microtask queue; `queueMicrotask`; `Promise.resolve().then(...)`; and where `requestAnimationFrame` callbacks run relative to microtasks.
+
+**Do:** log from synchronous code, from a microtask, from a `setTimeout`, and from a `requestAnimationFrame` in one script, and predict the order before you run it.
+
+#### GF.5 — The DOM by hand
+
+**Look up:** creating and updating elements without a framework (`createElement`, `textContent`, `replaceChildren`); event bubbling; and `event.target` vs `event.currentTarget`.
+
+**Build:** a plain-JS counter widget: a number and two buttons. Update the DOM by calling your own `render()` function after each change.
+
+#### GF.6 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Put your counter's state behind your logging Proxy.** Click a button. Which reads and writes did one click produce?
+2. **Call `render()` from inside the Proxy's `set` trap,** then change the value 1,000 times in a loop. How many renders? That's M43's trap.
+3. **Your event-order experiment.** Where would you schedule a single render so it runs after a burst of changes but before the browser paints? That's the batching decision.
+4. **Add twenty buttons, each with its own listener.** Then click in the gap between two of them and watch `event.target` bubble up to their parent. That's the delegation decision.
+
+#### GF.7 — Hand-off: what's yours in M43
+
+| Ground Floor left this… | M43 asks you to… |
+|---|---|
+| A Proxy that logs | `reactive()`, choosing a tracking mechanism |
+| A hand-called `render()` | `effect()`, which tracks its own dependencies and re-runs |
+| 1,000 renders for 1,000 changes | Batch them into one |
+| Listeners on every button | Decide on event delegation |
+| Nested reads noticed | Decide how nested state is tracked |
+| A counter | A small widget, and a firm fence on how much of React to rebuild |
+
+Then read the Briefing below.
+
+#### GF.8 — Check yourself before moving on
+
+- What do a Proxy's `get` and `set` traps receive?
+- Does a Proxy on an object automatically intercept reads on its nested objects?
+- In what order did your sync, microtask, timeout, and animation-frame logs print?
+- What's `this` inside a method passed as an event handler?
+- How many renders did 1,000 changes cause?
+
 ### Briefing
 
 When you change a variable in React and the screen updates, something is quietly watching that variable and re-rendering — that "something" is **reactivity**, and building a tiny version in plain JavaScript shows you exactly what React and RxJS do for you. Define as you go: **reactivity** (state changes automatically trigger the code that depends on them), a **Proxy** (a JS object that intercepts reads and writes, so you can _notice_ when a value is read or changed), an **effect** (a function that re-runs whenever the reactive values it read change), and the **microtask queue** (where the browser runs small jobs right after the current code — where you batch updates so a burst of changes causes one render, not many). The center of gravity is **the reactive core** — tracking which effects read which values and re-running them on change, batched — the floor under React and M5's RxJS.
@@ -3726,6 +7433,84 @@ Put a render counter in your effect; fire 1,000 mutations in a tight loop. **The
 > - Constraints make it respond to resizing; a prototype links screens for a click-through. (Output is a Figma file, not code.)
 
 **Anchors:** _Pixels With Intent_ (the visual-craft sensibility); M15/M28 (which this can spec); your design-engineering lane.
+
+### Ground Floor — Figma's building blocks
+
+*Read this before the Briefing. It assumes a design eye, but not that you've used Figma's structure. You'll make a throwaway button and a three-row list first, the unstructured way, then see what structure fixes. This tells you what each piece is for and what to look up, never how to design the real screen. Tokens, the type scale, component granularity, responsiveness, and the grid are the module's.*
+
+#### GF.1 — The picture first
+
+```
+FILE
+ └─ PAGE
+     └─ FRAME (a screen)           ← constraints: how children react when this resizes
+          ├─ AUTO-LAYOUT FRAME      ← children arranged like flexbox: direction, gap, padding
+          │    ├─ INSTANCE of a COMPONENT  (Button / variant: hover)
+          │    └─ Text   (uses a TEXT STYLE)
+          └─ Rectangle   (fill uses a COLOR STYLE or VARIABLE)
+
+master component changes ──▶ every instance updates
+detach an instance        ──▶ it never updates again
+```
+
+#### GF.2 — The basics
+
+**Look up:** Figma's own beginner course; frames vs groups, and why designers prefer frames; the layers panel; and selecting, nesting, and renaming layers.
+
+**Do:** make a frame the size of a phone screen with a title and a rectangle.
+
+#### GF.3 — Auto-layout
+
+**Look up:** adding auto-layout; direction, gap, and padding; "hug contents" vs "fill container" vs fixed sizing; and how auto-layout maps to CSS Flexbox (M15's Ground Floor).
+
+**Build:** a button whose background grows as you type longer label text.
+
+#### GF.4 — Components, as an idea
+
+**Look up:** creating a component; instances; overriding an instance's text; and variants and component properties, as names. Choosing when something is a variant vs a new component is M44's third decision.
+
+#### GF.5 — Styles and variables, as an idea
+
+**Look up:** color styles, text styles, and Figma variables; and what a design token is outside Figma.
+
+#### GF.6 — Prototyping
+
+**Look up:** prototype mode, connections between frames, and presenting a prototype.
+
+**Do:** link two frames so clicking a button goes to the second one.
+
+#### GF.7 — Run it and observe
+
+Build a list of three rows by drawing one row and duplicating it twice, without making a component.
+
+**Notice and leave alone:**
+
+1. **Change the first row's font size.** How many places did you have to change it?
+2. **Now make your button a component, place three instances, and detach one.** Change the master. Which instances updated? That's M44's trap.
+3. **Resize your phone frame wider.** What did the contents do? That's the constraints vs auto-layout decision.
+4. **Count how many different blues and font sizes you used** without meaning to. That's the token decision.
+
+#### GF.8 — Hand-off: what's yours in M44
+
+| Ground Floor left this… | M44 asks you to… |
+|---|---|
+| A button and some duplicated rows | A real screen, built with structure |
+| Colors and sizes picked by eye | Organize them as reusable styles or tokens |
+| A few font sizes | Choose a type scale |
+| One component, one detached instance | Decide component vs variant, and never detach to cheat |
+| A frame that didn't resize well | Make it respond, with constraints and auto-layout |
+| No grid | Choose a layout grid |
+| Two linked frames | A click-through prototype |
+
+Then read the Briefing below.
+
+#### GF.9 — Check yourself before moving on
+
+- Frame vs group: what's the practical difference?
+- "Hug contents" vs "fill container": what does each do?
+- What happens to an instance when you change its master? And to a detached one?
+- How does auto-layout correspond to Flexbox?
+- How many separate edits did it take to change your duplicated rows?
 
 ### Briefing
 
@@ -3786,6 +7571,85 @@ Run the prototype click-through, then resize a frame. **The number:** does the l
 
 **Anchors:** the sync line (with M46); the sovereignty thread (data you own); the instruments thread; Matuschak's notes as the philosophical north star.
 
+### Ground Floor — Data that lives on the device
+
+*Read this before the Briefing. It assumes browser JavaScript, but not that you've stored structured data in the browser or synced between tabs. You'll persist throwaway notes in IndexedDB and sync two tabs the naive way first, and watch the naive way lose data. This tells you what each piece is for and what to look up, never how to write it. The CRDT library, which fields merge, transport, storage engine, and the scheduler are the module's.*
+
+#### GF.1 — The picture first
+
+```
+Tab A (offline)          Tab B (offline)
+  title = "Kanji N5"        title = "Japanese N5"
+        │                          │
+        └──────── reconnect ───────┘
+                     │
+      LAST-WRITE-WINS:   one title survives, the other is silently gone
+      A CRDT:            both edits are inputs to a MERGE every peer computes the same way
+```
+
+#### GF.2 — Local-first, as a stance
+
+**Look up:** Ink & Switch's essay "Local-first software"; its seven ideals; and how this differs from a cloud app where the server is the source of truth.
+
+**Look up:** Andy Matuschak's writing on spaced repetition and the mnemonic medium.
+
+#### GF.3 — IndexedDB
+
+**Look up:** object stores, keys, and transactions; why the raw API is awkward; a small wrapper like `idb`; and the Application tab in DevTools, where you can inspect what's stored.
+
+**Build:** a throwaway page that saves notes to IndexedDB and reloads them after a refresh.
+
+#### GF.4 — Offline
+
+**Look up:** DevTools' offline toggle; `navigator.onLine` and the online and offline events, and how reliable they are; and service workers, as a name (for loading the app itself offline).
+
+**Do:** go offline in DevTools and confirm your notes page still saves and loads.
+
+#### GF.5 — Two tabs talking, naively
+
+**Look up:** `BroadcastChannel` for messages between tabs of the same origin.
+
+**Build:** make your notes page share a single "deck title" between two tabs: when one tab changes it, send the new value and have the other tab overwrite its own. That's last-write-wins.
+
+#### GF.6 — CRDTs, read before you build
+
+**Look up:** what a CRDT is; state-based vs operation-based CRDTs, as ideas; a grow-only counter as the classic first example; and the introductory docs for Yjs and for Automerge. Read both. Choosing is M45's first decision.
+
+#### GF.7 — Spaced repetition, as an algorithm description
+
+**Look up:** the SM-2 algorithm's description: ease factor, interval, repetitions, and how a review grade updates them; and FSRS, as a name.
+
+Don't implement it here.
+
+#### GF.8 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Go offline in both tabs.** Change the title differently in each. Then let them talk again (reload one, or resend). Whose title survived? Whose work vanished? That's M45's trap.
+2. **Imagine the tabs are on two different devices.** `BroadcastChannel` can't help. How would two devices find each other with no server-of-record? That's the transport decision.
+3. **Look at your note's fields.** Which ones would you care about if two edits collided, and which wouldn't matter? That's the per-field merge decision.
+
+#### GF.9 — Hand-off: what's yours in M45
+
+| Ground Floor left this… | M45 asks you to… |
+|---|---|
+| Notes in IndexedDB | Flashcards persisted locally; choose IndexedDB or SQLite-wasm |
+| Last-write-wins between tabs, losing data | Real merges via a CRDT, Yjs or Automerge |
+| Fields eyeballed | Decide which fields need true merge |
+| `BroadcastChannel` between tabs | Choose a transport between peers |
+| SM-2 read about | Implement an SM-2-lite scheduler |
+| A conflict that lost data | A conflict you create on purpose, shown converging |
+
+Then read the Briefing below.
+
+#### GF.10 — Check yourself before moving on
+
+- Name three of the local-first ideals.
+- What's an IndexedDB transaction for?
+- What does `BroadcastChannel` connect, and what can't it connect?
+- In your offline experiment, whose title survived, and why?
+- What's a CRDT, in one sentence?
+
 ### Briefing
 
 Andy Matuschak's work on memory systems and tools-for-thought — spaced repetition, the mnemonic medium — is a north star for the software you want to build. This module builds a spaced-repetition deck — flashcards that resurface just before you'd forget them — with a twist that teaches deep ideas: it's **local-first**. Define as you go: **local-first software** (your data lives on your device and works offline; sync is an enhancement, not a requirement — you _own_ your data, unlike cloud apps where the server is the truth), **spaced repetition** (an algorithm scheduling reviews at growing intervals — SM-2 is Anki's classic), **IndexedDB** (the browser's on-device database for structured data), and a **CRDT** — a _Conflict-free Replicated Data Type_ — a data structure designed so independent edits on different devices can _always_ be merged automatically into the same result, with no central coordinator. The center of gravity is **local-first architecture and CRDT-based sync** — data you own that merges instead of clobbering.
@@ -3844,6 +7708,79 @@ Kill the network, edit the same card (or add cards) on two peers, reconnect. **T
 > - It stays coherent under injected latency.
 
 **Anchors:** M7 (the ephemeral/persistent distinction — this is that trap in a shared world); M19 (the game loop); M45 (the CRDT sync you built); the sync line and instruments threads. Use your Aseprite pixel sprites for the avatars.
+
+### Ground Floor — A room on a canvas
+
+*Read this before the Briefing. It assumes M7, M19, and M45's Ground Floors: a broadcast socket, a game loop, and the idea of a CRDT. It doesn't assume you've put them together in a browser. You'll get a single sprite moving around a canvas room and send its position to another window the dumb way first. This tells you what each piece is for and what to look up, never how to write it. Awareness vs document, transport, world representation, loop structure, and smoothing are the module's.*
+
+#### GF.1 — The picture first
+
+```
+each window:
+  requestAnimationFrame loop
+     read keys held ─▶ move MY avatar ─▶ draw room, tiles, all avatars ─▶ repeat
+
+between windows:
+  MY position ─────────────────▶ other windows      (changes constantly; meaningless once I leave)
+  a placed tile ───────────────▶ other windows      (rarely changes; must outlive everyone)
+                                     ▲
+                       same wire, very different kinds of data
+```
+
+#### GF.2 — Keyboard input for a game
+
+**Look up:** `keydown` and `keyup`; why you track which keys are *held* rather than reacting to each keydown; key repeat; `event.key` vs `event.code`; and stopping arrow keys from scrolling the page.
+
+#### GF.3 — Sprites on a canvas
+
+**Look up:** loading an image for a canvas and waiting until it's ready; `drawImage` with a source rectangle, for picking one frame out of a sprite sheet; `imageSmoothingEnabled = false` for crisp pixel art; and exporting a sprite sheet from Aseprite.
+
+**Build:** a canvas room with one of your Aseprite sprites, moved by the arrow keys, inside a `requestAnimationFrame` loop. Use delta time from M17's Ground Floor so speed doesn't depend on frame rate.
+
+#### GF.4 — A tile you can place
+
+**Build:** click to place a tile on a grid in the room. Keep tiles in a plain array or map.
+
+#### GF.5 — The dumb multiplayer version
+
+**Build:** reuse M7's broadcast server. Send your avatar's position on every frame it changes, and draw other windows' avatars from what arrives. Send placed tiles the same way.
+
+#### GF.6 — Latency, on purpose
+
+**Look up:** adding an artificial delay in your relay server before it forwards each message; and why localhost testing hides every network problem.
+
+**Do:** add a few hundred milliseconds of delay and watch two windows.
+
+#### GF.7 — Run it and observe
+
+**Notice and leave alone:**
+
+1. **Close one window.** Does its avatar stay in the other? That's M46's trap.
+2. **Reload a window.** Are the tiles still there? Are they still there if the server restarts?
+3. **With delay on, watch a remote avatar move.** Smooth or jumpy? That's the smoothing decision.
+4. **Count messages per second** while you hold an arrow key. Now picture every one of those being saved forever in a document.
+5. **Place a tile in both windows** in the same cell at nearly the same time. What happens?
+
+#### GF.8 — Hand-off: what's yours in M46
+
+| Ground Floor left this… | M46 asks you to… |
+|---|---|
+| Positions and tiles on the same wire | Put presence in awareness and the world in the persistent CRDT document |
+| M7's broadcast server | Choose a transport |
+| Tiles in a plain array | Model the shared layer as CRDT state |
+| A `requestAnimationFrame` loop | Decide on loop structure |
+| Jumpy remote avatars | Decide whether to interpolate |
+| A ghost and lost tiles | No ghosts; a world that persists and merges concurrent edits |
+
+Then read the Briefing below.
+
+#### GF.9 — Check yourself before moving on
+
+- Why track held keys instead of reacting to each `keydown`?
+- How do you draw one frame from a sprite sheet?
+- What happened to a closed window's avatar?
+- How many position messages per second did holding a key send?
+- Which of your data should outlive everyone leaving, and which shouldn't?
 
 ### Briefing
 

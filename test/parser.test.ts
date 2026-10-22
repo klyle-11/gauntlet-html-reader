@@ -50,6 +50,16 @@ test('every volume I/II/III/VI module has the core sections', () => {
   }
 });
 
+test('every I/II/III module has a Ground Floor, right before its Briefing', () => {
+  for (const m of corpus.modules.values()) {
+    if (!['I', 'II', 'III'].includes(m.volume)) continue;
+    const order = m.sections.map((s) => s.canonical);
+    const gf = order.indexOf('groundfloor');
+    assert.ok(gf >= 0, `${m.key} has no Ground Floor`);
+    assert.equal(order[gf + 1], 'briefing', `${m.key}: Ground Floor is not followed by the Briefing`);
+  }
+});
+
 test('section names normalize across schemas', () => {
   assert.equal(canonicalSection('Hints ladder'), 'hints');
   assert.equal(canonicalSection('Hint ladder'), 'hints');
@@ -57,6 +67,7 @@ test('section names normalize across schemas', () => {
   assert.equal(canonicalSection('Research targets and stops'), 'research');
   assert.equal(canonicalSection('Prove it in three rooms'), 'prove');
   assert.equal(canonicalSection('The build'), 'feature');
+  assert.equal(canonicalSection('Ground Floor — How a request becomes code'), 'groundfloor');
   assert.equal(canonicalSection('Concept translation'), 'extra');
 });
 

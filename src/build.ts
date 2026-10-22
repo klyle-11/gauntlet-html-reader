@@ -113,6 +113,10 @@ export function build(outDir: string, corpus = parseCorpus(ROOT)) {
           canonical: s.canonical,
           heading: s.heading,
           html: md.render(s.md, ctx),
+          // Ground Floor steps (GF.1, GF.2, …) get their own TOC entries.
+          steps: headings(s.md.split('\n'))
+            .filter((h) => /^GF\.\d+/.test(h.text))
+            .map((h) => ({ id: githubSlug(h.text), label: h.text.replace(/\s+—\s+/, ' · ') })),
         }));
         const mermaid = m.sections.some((s) => /^```mermaid/m.test(s.md));
         write(

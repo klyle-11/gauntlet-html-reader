@@ -1,6 +1,7 @@
 export type Canonical =
   | 'lead'
   | 'story'
+  | 'groundfloor'
   | 'briefing'
   | 'trap'
   | 'feature'
