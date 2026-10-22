@@ -73,10 +73,12 @@ test('no source text is dropped from modules', () => {
   assert.ok(all.includes('**Near-spoiler (after two attempts):**'));
 });
 
-test('by-stack grouping covers all of I and II exactly once', () => {
+test('by-stack grouping covers every module of every volume exactly once', () => {
   const keys = corpus.stacks.flatMap((g) => g.keys);
-  assert.equal(keys.length, 46);
-  assert.equal(new Set(keys).size, 46);
+  assert.equal(keys.length, corpus.modules.size);
+  assert.equal(new Set(keys).size, corpus.modules.size);
+  assert.equal(corpus.stacks.find((g) => g.title === 'UI / Frontend')!.keys.length >= 8, true);
+  assert.ok(corpus.stacks.find((g) => g.title === '.NET & Microsoft')!.keys.includes('IV-M60'));
 });
 
 test('build writes a self-contained site with no broken internal links', () => {

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { headings, parseModuleHeading, splitVolume } from './split.ts';
-import type { Corpus, Manifest, Module, Page, StackGroup } from './types.ts';
+import type { Corpus, Manifest, Module, Page, StackGroup, StackRule } from './types.ts';
 
 export function loadManifest(root: string): Manifest {
   return JSON.parse(readFileSync(resolve(root, 'volumes.json'), 'utf8'));
@@ -44,5 +44,20 @@ function parseStacks(root: string, manifest: Manifest, modules: Map<string, Modu
       groups[groups.length - 1].keys.push(key);
     }
   }
-  return groups;
+  return classifyRest(groups, cfg.rules ?? [], cfg.fallback, modules);
+}
+
+/** Modules the stack file does not cover (volumes III–VI) are placed by rule, in volume order. */
+function classifyRest(groups: StackGroup[], rules: StackRule[], fallback: string | undefined, modules: Map<string, Module>): StackGroup[] {
+  const placed = new Set(groups.flatMap((g) => g.keys));
+  const compiled = rules.map((r) => ({ ...r, re: r.pattern ? new RegExp(r.pattern, 'i') : undefined }));
+  const group = (title: string) => groups.find((g) => g.title === title) ?? groups[groups.push({ title, keys: [] }) - 1];
+  for (const m of modules.values()) {
+    if (placed.has(m.key)) continue;
+    const text = `${m.title} · ${m.stack ?? ''}`;
+    const rule = compiled.find((r) => (!r.volumes || r.volumes.includes(m.volume)) && (r.re ? r.re.test(text) : !!r.volumes));
+    const title = rule?.group ?? fallback;
+    if (title) group(title).keys.push(m.key);
+  }
+  return groups.filter((g) => g.keys.length);
 }

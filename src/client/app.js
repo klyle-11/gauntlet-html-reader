@@ -949,7 +949,30 @@
 
   // ---------------------------------------------------------------- misc
 
+  /** Saves the page as it is now (your notes and checks included) as one standalone file: inlined CSS, no scripts. */
+  function exportHtml() {
+    const root = document.documentElement.cloneNode(true);
+    const live = $$('input, textarea, select');
+    $$('input, textarea, select', root).forEach((el, i) => {
+      const src = live[i];
+      if (el.tagName === 'TEXTAREA') el.textContent = src.value;
+      else if (el.tagName === 'SELECT') $$('option', el).forEach((o, j) => o.toggleAttribute('selected', src.options[j].selected));
+      else if (src.type === 'checkbox' || src.type === 'radio') el.toggleAttribute('checked', src.checked);
+      else el.setAttribute('value', src.value);
+    });
+    $$('script, .topbar, .timerbar, .toast, link[rel=stylesheet]', root).forEach((el) => el.remove());
+    $$('a[href]', root).forEach((a) => {
+      if (!a.getAttribute('href').startsWith('#')) a.removeAttribute('href');
+    });
+    const style = document.createElement('style');
+    style.textContent = window.GAUNTLET_CSS || '';
+    $('head', root).append(style);
+    const name = (location.pathname.split('/').pop() || 'index.html').replace(/\.html$/, '');
+    download(`${name}.html`, '<!doctype html>\n' + root.outerHTML, 'text/html');
+  }
+
   function initChrome() {
+    $('[data-action=export-html]')?.addEventListener('click', exportHtml);
     $('[data-action=theme]')?.addEventListener('click', () => {
       const cur = document.documentElement.dataset.theme;
       const dark = cur ? cur === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;

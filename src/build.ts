@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseCorpus } from './parser/index.ts';
@@ -84,6 +84,9 @@ export function build(outDir: string, corpus = parseCorpus(ROOT)) {
     mermaidSrc = 'assets/mermaid.min.js';
   }
   for (const f of ['app.css', 'app.js']) copyFileSync(resolve(ROOT, 'src/client', f), resolve(outDir, 'assets', f));
+  // The stylesheet again as a script, so "Export HTML" can inline it even from file:// (where fetch and cssRules are blocked).
+  const css = readFileSync(resolve(ROOT, 'src/client/app.css'), 'utf8');
+  writeFileSync(resolve(outDir, 'assets/export-css.js'), `window.GAUNTLET_CSS=${JSON.stringify(css)};\n`);
 
   const write = (file: string, html: string) => writeFileSync(resolve(outDir, file), html);
   const page = (title: string, body: string, opts: { volume?: string; mermaid?: boolean } = {}) =>
@@ -182,9 +185,9 @@ function stackIndex(corpus: Corpus, stackHtml: (m: Module) => string) {
     .join('\n');
   return `<div class="shell single"><main class="volume">
   <nav class="crumbs"><a href="index.html">Home</a></nav>
-  <p class="eyebrow">Volumes I & II</p>
+  <p class="eyebrow">All volumes</p>
   <h1>By stack</h1>
-  <p class="lede">The same forty-six builds, grouped by subject, language and stack.</p>
+  <p class="lede">All ${corpus.modules.size} builds from every volume, grouped by subject, language and stack.</p>
   ${groups}
 </main></div>`;
 }
