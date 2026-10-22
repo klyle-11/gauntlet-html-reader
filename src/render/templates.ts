@@ -41,11 +41,13 @@ export function layout(o: LayoutOpts): string {
   <a class="brand" href="index.html">Gauntlet</a>
   <nav class="vols" aria-label="Volumes">${nav}<a href="stacks.html">By stack</a></nav>
   <span class="spacer"></span>
+  <button class="export-html" type="button" data-action="export-html" title="Download this page as a standalone HTML file">Export HTML</button>
   <button class="ws-status" type="button" data-action="workspace" title="Where your work is saved">Browser storage</button>
   <button class="icon" type="button" data-action="theme" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 ${o.body}
 <div class="timerbar" hidden></div>
+<script src="assets/export-css.js"></script>
 <script src="assets/app.js"></script>
 ${o.mermaid ? `<script src="${o.mermaidSrc}" defer onload="window.renderMermaid&&window.renderMermaid()"></script>` : ''}
 </body>

@@ -62,8 +62,48 @@
   ],
   "stackIndex": {
     "file": "docs/The_Gauntlet_By_Stack.md",
-    "volumes": ["I", "II"],
+    "volumes": [
+      "I",
+      "II"
+    ],
     "groupLevel": 1,
-    "moduleLevel": 2
+    "moduleLevel": 2,
+    "fallback": "Creative & Misc",
+    "rules": [
+      {
+        "group": "Leadership & Career",
+        "pattern": "leadership|mentoring|conversational|interview"
+      },
+      {
+        "group": ".NET & Microsoft",
+        "volumes": [
+          "IV"
+        ]
+      },
+      {
+        "group": "Networking & Security",
+        "pattern": "reticulum|meshtastic|network|lora|detectab|sanitiz|\\bcsp\\b|hostile"
+      },
+      {
+        "group": "C & the Machine",
+        "pattern": "esp32|firmware|c\\+\\+|raspberry|c abi|wasm|native engine"
+      },
+      {
+        "group": "Databases & Data",
+        "pattern": "postgres|sql|indexeddb|jpa|tombstone|merge|catalog"
+      },
+      {
+        "group": "UI / Frontend",
+        "pattern": "next\\.js|electron|\\bweb\\b|design|visual|avatar|handles|virtualiz|focus mode|spatial"
+      },
+      {
+        "group": "Reading Engine & Documents",
+        "pattern": "epub|pdf|zip|ocr|\\btext\\b|anchor|highlight|grammar|wiki|dom ranges"
+      },
+      {
+        "group": "REST APIs & the Contract",
+        "pattern": "\\bapi\\b|http|rpc|express|\\brest\\b"
+      }
+    ]
   }
 }

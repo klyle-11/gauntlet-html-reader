@@ -32,7 +32,24 @@ export interface VolumeConfig {
 
 export interface Manifest {
   volumes: VolumeConfig[];
-  stackIndex: { file: string; volumes: string[]; groupLevel: number; moduleLevel: number };
+  stackIndex: {
+    file: string;
+    volumes: string[];
+    groupLevel: number;
+    moduleLevel: number;
+    /** Places modules the stack file does not list. First matching rule wins. */
+    rules?: StackRule[];
+    /** Group for modules no rule matches. */
+    fallback?: string;
+  };
+}
+
+export interface StackRule {
+  group: string;
+  /** Matches every module of these volumes. */
+  volumes?: string[];
+  /** Case-insensitive regex tested against `<title> · <stack>`. */
+  pattern?: string;
 }
 
 export interface Section {
