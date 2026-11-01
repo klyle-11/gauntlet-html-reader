@@ -89,4 +89,4 @@ Keys are `<volume>-<id>`, for example `I-M1`, `IV-M60`, `V-RR04` and `VI-M60`. T
 
 ## Other pages
 
-- `ui/halftone.html`: a standalone two-color page (indigo navy `#1d1633` and off-white `#fffffc`) where every shade is drawn as halftone dots on a canvas. It's not part of the workbook build; open the file directly.
+- `ui/pip-paper.html`: a standalone site for a fictional notebook shop, in two colors (indigo navy `#1d1633` and off-white `#fffffc`), built around polka dots. It's not part of the workbook build; open the file directly.
