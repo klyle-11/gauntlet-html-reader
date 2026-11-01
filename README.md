@@ -86,3 +86,7 @@ workspace/             suggested workspace folder (gitignored or committed, your
 ## Module keys
 
 Keys are `<volume>-<id>`, for example `I-M1`, `IV-M60`, `V-RR04` and `VI-M60`. The bare `M60` is ambiguous, so it is never used as a key.
+
+## Other pages
+
+- `ui/halftone.html`: a standalone two-color page (indigo navy `#1d1633` and off-white `#fffffc`) where every shade is drawn as halftone dots on a canvas. It's not part of the workbook build; open the file directly.

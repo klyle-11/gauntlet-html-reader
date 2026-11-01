@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Halftone</title>
+<meta name="description" content="A two-color page: indigo navy and off-white, with every shade made from dots that grow.">
+<style>
+  /* Two colors, nothing else: every tone on the page is a dot's size. */
+  :root {
+    --navy: #1d1633;
+    --cream: #fffffc;
+    --ink: var(--navy);
+    --paper: var(--cream);
+    --sans: ui-sans-serif, "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --gutter: clamp(16px, 4vw, 48px);
+    color-scheme: light;
+  }
+  :root[data-theme="inverted"] {
+    --ink: var(--cream);
+    --paper: var(--navy);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--ink); color: var(--paper); }
+  .ink ::selection { background: var(--paper); color: var(--ink); }
+  :focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
+
+  .paper { background: var(--paper); color: var(--ink); }
+  .ink { background: var(--ink); color: var(--paper); }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 var(--gutter); }
+  canvas { display: block; width: 100%; }
+
+  /* header */
+  .top { display: flex; align-items: center; gap: 1.5rem; padding-block: 22px; }
+  .logo { display: inline-flex; align-items: center; gap: 0.6rem; font-weight: 800; letter-spacing: -0.02em; font-size: 1.1rem; color: inherit; text-decoration: none; }
+  .logo i { display: inline-block; border-radius: 50%; background: currentColor; }
+  .logo i:nth-child(1) { width: 6px; height: 6px; }
+  .logo i:nth-child(2) { width: 11px; height: 11px; margin-left: -4px; }
+  .logo i:nth-child(3) { width: 18px; height: 18px; margin-left: -4px; }
+  .top nav { display: flex; gap: 1.25rem; margin-left: auto; }
+  .top nav a { color: inherit; text-decoration: none; font-size: 0.95rem; border-bottom: 2px solid transparent; }
+  .top nav a:hover { border-bottom-color: currentColor; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    font: 600 0.95rem/1 var(--sans);
+    padding: 0.85rem 1.25rem;
+    border: 2px solid var(--ink); border-radius: 999px;
+    background: var(--paper); color: var(--ink);
+    cursor: pointer; text-decoration: none;
+    transition: background-color 0.18s, color 0.18s;
+  }
+  .btn:hover, .btn.solid { background: var(--ink); color: var(--paper); }
+  .btn.solid:hover { background: var(--paper); color: var(--ink); }
+  .btn.small { padding: 0.5rem 0.9rem; font-size: 0.85rem; }
+
+  /* hero */
+  .hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); align-items: center; gap: clamp(24px, 4vw, 64px); padding-block: clamp(24px, 6vw, 72px) clamp(16px, 3vw, 40px); }
+  .eyebrow { font: 600 0.78rem/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; margin: 0 0 1.25rem; }
+  h1 { font-size: clamp(2.6rem, 7vw, 5.4rem); line-height: 0.95; letter-spacing: -0.045em; font-weight: 800; margin: 0 0 1.5rem; }
+  .lede { font-size: clamp(1.05rem, 1.6vw, 1.25rem); max-width: 34ch; margin: 0 0 2rem; }
+  .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+  .orb { aspect-ratio: 1 / 1.08; touch-action: pan-y; }
+
+  .ramp { height: clamp(96px, 14vw, 180px); }
+
+  /* ingredients */
+  .ingredients { padding-block: clamp(40px, 7vw, 96px); }
+  h2 { font-size: clamp(2rem, 4.5vw, 3.4rem); line-height: 1; letter-spacing: -0.035em; font-weight: 800; margin: 0 0 0.75rem; }
+  .section-lede { max-width: 52ch; margin: 0 0 clamp(28px, 4vw, 48px); }
+  .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(16px, 2.5vw, 28px); }
+  .card { border: 2px solid var(--paper); border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; }
+  .card canvas { aspect-ratio: 4 / 3; border-bottom: 2px solid var(--paper); }
+  .card div { padding: 1.25rem 1.35rem 1.5rem; }
+  .card h3 { margin: 0 0 0.4rem; font-size: 1.2rem; letter-spacing: -0.01em; }
+  .card .num { font: 600 0.75rem/1 var(--mono); letter-spacing: 0.12em; display: block; margin-bottom: 0.9rem; }
+  .card p { margin: 0; font-size: 0.97rem; }
+
+  /* scale */
+  .scale { padding-block: clamp(40px, 7vw, 96px) clamp(32px, 5vw, 64px); }
+  .tones { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: clamp(6px, 1vw, 12px); margin: 0; padding: 0; list-style: none; }
+  .tones li { display: grid; gap: 0.5rem; }
+  .tones canvas { aspect-ratio: 1; border: 2px solid var(--ink); border-radius: 12px; }
+  .tones span { font: 600 0.72rem/1 var(--mono); text-align: center; }
+
+  .quote {
+    padding-block: clamp(32px, 6vw, 80px) clamp(40px, 6vw, 80px);
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: clamp(24px, 4vw, 64px); align-items: start;
+    /* A rule as wide as the text column, not the padded box. */
+    background: linear-gradient(var(--ink), var(--ink)) top center / calc(100% - 2 * var(--gutter)) 2px no-repeat;
+  }
+  .quote blockquote { margin: 0; font-size: clamp(1.5rem, 3.2vw, 2.4rem); line-height: 1.15; letter-spacing: -0.025em; font-weight: 700; }
+  .quote p { margin: 0 0 1rem; }
+  .swatch { display: inline-flex; align-items: center; gap: 0.5rem; font: 600 0.85rem/1 var(--mono); margin-right: 1.25rem; }
+  .swatch i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--ink); }
+  .swatch.navy i { background: var(--navy); }
+  .swatch.cream i { background: var(--cream); }
+
+  .tide { height: clamp(140px, 18vw, 240px); }
+  footer { padding-block: 8px clamp(40px, 6vw, 72px); }
+  footer .wrap { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 1rem; }
+  footer strong { font-size: clamp(1.6rem, 3.5vw, 2.6rem); letter-spacing: -0.035em; }
+  footer small { font: 600 0.8rem/1.4 var(--mono); }
+
+  @media (max-width: 820px) {
+    .hero { grid-template-columns: minmax(0, 1fr); }
+    .orb { max-width: 520px; width: 100%; margin: 0 auto; }
+    .cards { grid-template-columns: minmax(0, 1fr); }
+    .tones { grid-template-columns: repeat(6, minmax(0, 1fr)); row-gap: 14px; }
+    .quote { grid-template-columns: minmax(0, 1fr); }
+    .top nav a { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .btn { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="paper">
+  <div class="wrap top">
+    <a class="logo" href="#top" aria-label="Halftone, home"><i></i><i></i><i></i><span>Halftone</span></a>
+    <nav aria-label="Sections">
+      <a href="#ingredients">Pattern</a>
+      <a href="#scale">Scale</a>
+      <a href="#notes">Notes</a>
+    </nav>
+    <button class="btn small" type="button" data-invert aria-pressed="false">Invert</button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="paper">
+    <div class="wrap hero">
+      <div>
+        <p class="eyebrow">Two-color halftone</p>
+        <h1>Every shade is a circle&rsquo;s size.</h1>
+        <p class="lede">One indigo navy, one off-white, and a grid of dots that grow. No grays and no transparency: tone comes from how much paper each dot covers.</p>
+        <div class="actions">
+          <a class="btn solid" href="#scale">See the scale</a>
+          <button class="btn" type="button" data-invert aria-pressed="false">Invert colors</button>
+        </div>
+      </div>
+      <canvas class="orb" data-field="orb" data-cell="11" aria-hidden="true"></canvas>
+    </div>
+  </section>
+
+  <canvas class="ramp" data-field="down" data-cell="12" aria-hidden="true"></canvas>
+
+  <section class="ink" id="ingredients">
+    <div class="wrap ingredients">
+      <h2>Three ingredients</h2>
+      <p class="section-lede">The whole page is drawn the same way: a fixed grid, a function that says how dark each point should be, and a rule that turns darkness into radius.</p>
+      <div class="cards">
+        <article class="card">
+          <canvas data-field="diagonal" data-dots="paper" data-cell="12" aria-hidden="true"></canvas>
+          <div>
+            <span class="num">01 — GRID</span>
+            <h3>A grid, turned 45°</h3>
+            <p>Dots sit on a square grid rotated the way print screens are, so the eye reads tone instead of rows and columns.</p>
+          </div>
+        </article>
+        <article class="card">
+          <canvas data-field="ripple" data-dots="paper" data-cell="10" aria-hidden="true"></canvas>
+          <div>
+            <span class="num">02 — FIELD</span>
+            <h3>A field of darkness</h3>
+            <p>Every point asks a function how dark it should be: a ramp, a sphere, a ripple, a tide. The function is the picture.</p>
+          </div>
+        </article>
+        <article class="card">
+          <canvas data-field="wave" data-dots="paper" data-cell="11" aria-hidden="true"></canvas>
+          <div>
+            <span class="num">03 — THRESHOLD</span>
+            <h3>Darkness becomes radius</h3>
+            <p>Each radius is solved so the dot covers exactly its share of the cell. At about 79% neighbours touch; at 100% the paper is gone.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <canvas class="ramp" data-field="up" data-cell="12" aria-hidden="true"></canvas>
+
+  <section class="paper" id="scale">
+    <div class="wrap scale">
+      <h2>The scale</h2>
+      <p class="section-lede">Eleven steps from paper to ink, using the same two colors and the same grid. Nothing between them is a new color.</p>
+      <ol class="tones">
+        <li><canvas data-field="flat" data-tone="0" data-cell="9" aria-hidden="true"></canvas><span>0</span></li>
+        <li><canvas data-field="flat" data-tone="10" data-cell="9" aria-hidden="true"></canvas><span>10</span></li>
+        <li><canvas data-field="flat" data-tone="20" data-cell="9" aria-hidden="true"></canvas><span>20</span></li>
+        <li><canvas data-field="flat" data-tone="30" data-cell="9" aria-hidden="true"></canvas><span>30</span></li>
+        <li><canvas data-field="flat" data-tone="40" data-cell="9" aria-hidden="true"></canvas><span>40</span></li>
+        <li><canvas data-field="flat" data-tone="50" data-cell="9" aria-hidden="true"></canvas><span>50</span></li>
+        <li><canvas data-field="flat" data-tone="60" data-cell="9" aria-hidden="true"></canvas><span>60</span></li>
+        <li><canvas data-field="flat" data-tone="70" data-cell="9" aria-hidden="true"></canvas><span>70</span></li>
+        <li><canvas data-field="flat" data-tone="80" data-cell="9" aria-hidden="true"></canvas><span>80</span></li>
+        <li><canvas data-field="flat" data-tone="90" data-cell="9" aria-hidden="true"></canvas><span>90</span></li>
+        <li><canvas data-field="flat" data-tone="100" data-cell="9" aria-hidden="true"></canvas><span>100</span></li>
+      </ol>
+    </div>
+
+    <div class="wrap quote" id="notes">
+      <blockquote>Tone without a third color.</blockquote>
+      <div>
+        <p>The sphere at the top is lit from wherever your pointer is; move it and the shading follows. The tide below drifts slowly unless your system asks for reduced motion.</p>
+        <p>The palette is two values, set once at the top of the stylesheet. Invert swaps them, and every dot is redrawn in the other color.</p>
+        <p><span class="swatch navy"><i></i>#1d1633</span><span class="swatch cream"><i></i>#fffffc</span></p>
+      </div>
+    </div>
+  </section>
+
+  <canvas class="tide" data-field="tide" data-cell="12" aria-hidden="true"></canvas>
+</main>
+
+<footer class="ink">
+  <div class="wrap">
+    <strong>Halftone</strong>
+    <small>Two colors · one grid · every shade a circle</small>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const TAU = Math.PI * 2;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const clamp01 = (t) => clamp(t, 0, 1);
+  const smooth = (t) => t * t * (3 - 2 * t);
+
+  // Where the sphere's light comes from, in sphere radii from its center. The target follows the pointer.
+  const light = { x: -0.6, y: -0.7, tx: -0.6, ty: -0.7 };
+  let phase = 0;
+
+  // Fraction of a cell covered by its dot, for a radius in cell widths. The cell is the dot's
+  // own square, and inside it no other dot is nearer, so overlaps never count twice.
+  function coverage(r) {
+    if (r <= 0.5) return Math.PI * r * r;
+    if (r >= Math.SQRT1_2) return 1;
+    const segment = r * r * Math.acos(0.5 / r) - 0.5 * Math.sqrt(r * r - 0.25);
+    return Math.PI * r * r - 4 * segment;
+  }
+  // Darkness → radius, solved once by bisection, so covered area equals darkness exactly.
+  const RADIUS = new Float32Array(257);
+  for (let k = 0; k <= 256; k++) {
+    let lo = 0, hi = Math.SQRT1_2;
+    for (let i = 0; i < 28; i++) {
+      const mid = (lo + hi) / 2;
+      if (coverage(mid) < k / 256) lo = mid; else hi = mid;
+    }
+    RADIUS[k] = hi;
+  }
+  // Full darkness overshoots half the diagonal slightly, so anti-aliasing leaves no hairline gaps.
+  const radiusFor = (t) => (t >= 0.999 ? 0.74 : RADIUS[Math.round(clamp01(t) * 256)]);
+
+  // Each field maps a point (in CSS px) to darkness in [0, 1].
+  const fields = {
+    down: (x, y, w, h) => smooth(clamp01(y / h)),
+    up: (x, y, w, h) => smooth(clamp01(1 - y / h)),
+    diagonal: (x, y, w, h) => clamp01((x / w) * 0.55 + (y / h) * 0.55 - 0.05),
+    ripple: (x, y, w, h) => 0.5 + 0.5 * Math.cos(Math.hypot(x - w * 0.5, y - h * 0.55) / 10),
+    wave: (x, y) => clamp01(0.5 + 0.48 * Math.sin(x / 24 + Math.sin(y / 28) * 1.8)),
+    flat: (x, y, w, h, c) => Number(c.dataset.tone) / 100,
+    tide: (x, y, w, h) =>
+      smooth(clamp01((y / h) * 1.4 - 0.2 + 0.16 * Math.sin(x / 110 + phase) + 0.06 * Math.sin(x / 47 - phase * 1.7))),
+  };
+
+  // The sphere: shaded by the light, then clipped to its circle so the silhouette is crisp.
+  const sphere = (w, h) => ({ R: Math.min(w, h) * 0.36, cx: w / 2, cy: h * 0.44 });
+  const lightDir = () => {
+    const len = Math.hypot(light.x, light.y, 0.9);
+    return { lx: light.x / len, ly: light.y / len, lz: 0.9 / len };
+  };
+  const orbLayers = [
+    {
+      clip: (ctx, w, h) => {
+        const { R, cx, cy } = sphere(w, h);
+        ctx.beginPath();
+        ctx.arc(cx, cy, R, 0, TAU);
+        ctx.clip();
+      },
+      fn: (x, y, w, h) => {
+        const { R, cx, cy } = sphere(w, h);
+        const { lx, ly, lz } = lightDir();
+        let dx = (x - cx) / R, dy = (y - cy) / R;
+        const d = Math.hypot(dx, dy);
+        // Dots just outside the rim take the rim's shade, so the clip edge has no gaps.
+        if (d > 1) { dx /= d; dy /= d; }
+        const nz = Math.sqrt(Math.max(0, 1 - dx * dx - dy * dy));
+        const lambert = Math.max(0, dx * lx + dy * ly + nz * lz);
+        return 0.04 + 0.96 * Math.pow(1 - lambert, 1.2);
+      },
+    },
+    {
+      // A soft elliptical shadow on the ground, pushed away from the light.
+      fn: (x, y, w, h) => {
+        const { R, cx, cy } = sphere(w, h);
+        const { lx } = lightDir();
+        const ex = (x - (cx - lx * R * 0.6)) / (R * 0.95);
+        const ey = (y - (cy + R * 1.2)) / (R * 0.19);
+        const e = ex * ex + ey * ey;
+        return e < 1 ? 0.6 * smooth(1 - e) : 0;
+      },
+    },
+  ];
+
+  function render(c) {
+    const w = c.clientWidth, h = c.clientHeight;
+    if (!w || !h) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const W = Math.round(w * dpr), H = Math.round(h * dpr);
+    if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+    const ctx = c.getContext('2d');
+    const css = getComputedStyle(c);
+    const ink = css.getPropertyValue('--ink').trim();
+    const paper = css.getPropertyValue('--paper').trim();
+    const inverse = c.dataset.dots === 'paper';
+    const layers = c.dataset.field === 'orb' ? orbLayers : [{ fn: fields[c.dataset.field] }];
+    const s = Number(c.dataset.cell) || 12;
+    // The grid is turned 45°, the way print screens are.
+    const ca = Math.SQRT1_2, sa = Math.SQRT1_2;
+    const n = Math.ceil(Math.hypot(w, h) / 2 / s) + 1;
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = inverse ? ink : paper;
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = inverse ? paper : ink;
+    for (const layer of layers) {
+      ctx.save();
+      layer.clip?.(ctx, w, h);
+      ctx.beginPath();
+      for (let i = -n; i <= n; i++) {
+        for (let j = -n; j <= n; j++) {
+          const x = w / 2 + (i * ca - j * sa) * s;
+          const y = h / 2 + (i * sa + j * ca) * s;
+          if (x < -s || x > w + s || y < -s || y > h + s) continue;
+          const r = s * radiusFor(layer.fn(x, y, w, h, c));
+          if (r < 0.4) continue;
+          ctx.moveTo(x + r, y);
+          ctx.arc(x, y, r, 0, TAU);
+        }
+      }
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  const canvases = [...document.querySelectorAll('canvas[data-field]')];
+  const orb = document.querySelector('canvas[data-field="orb"]');
+  const tides = canvases.filter((c) => c.dataset.field === 'tide');
+  const renderAll = () => canvases.forEach(render);
+
+  // One animation loop: ease the light toward the pointer, and drift the tide while it's on screen.
+  let raf = 0;
+  let tideVisible = false;
+  function frame() {
+    raf = 0;
+    let again = false;
+    const dx = light.tx - light.x, dy = light.ty - light.y;
+    if (Math.abs(dx) + Math.abs(dy) > 0.002) {
+      light.x += dx * 0.14;
+      light.y += dy * 0.14;
+      render(orb);
+      again = true;
+    }
+    if (tideVisible && !reduce.matches) {
+      phase += 0.012;
+      tides.forEach(render);
+      again = true;
+    }
+    if (again) raf = requestAnimationFrame(frame);
+  }
+  const kick = () => { if (!raf) raf = requestAnimationFrame(frame); };
+
+  window.addEventListener('pointermove', (e) => {
+    const r = orb.getBoundingClientRect();
+    const R = Math.min(r.width, r.height) * 0.36;
+    light.tx = clamp((e.clientX - (r.left + r.width / 2)) / R, -1.8, 1.8);
+    light.ty = clamp((e.clientY - (r.top + r.height * 0.44)) / R, -1.8, 1.8);
+    if (reduce.matches) {
+      light.x = light.tx;
+      light.y = light.ty;
+      render(orb);
+    } else {
+      kick();
+    }
+  }, { passive: true });
+
+  new IntersectionObserver((entries) => {
+    tideVisible = entries.some((e) => e.isIntersecting);
+    if (tideVisible) kick();
+  }).observe(tides[0]);
+  reduce.addEventListener('change', kick);
+
+  let pending = 0;
+  new ResizeObserver(() => {
+    cancelAnimationFrame(pending);
+    pending = requestAnimationFrame(renderAll);
+  }).observe(document.body);
+
+  // Invert swaps the two colors everywhere, and is remembered in this browser only.
+  const toggles = [...document.querySelectorAll('[data-invert]')];
+  function setInverted(on) {
+    document.documentElement.toggleAttribute('data-theme', on);
+    if (on) document.documentElement.dataset.theme = 'inverted';
+    toggles.forEach((b) => b.setAttribute('aria-pressed', String(on)));
+    renderAll();
+  }
+  toggles.forEach((b) => b.addEventListener('click', () => {
+    const on = document.documentElement.dataset.theme !== 'inverted';
+    setInverted(on);
+    try { localStorage.setItem('halftone:inverted', on ? '1' : '0'); } catch {}
+  }));
+  let saved = false;
+  try { saved = localStorage.getItem('halftone:inverted') === '1'; } catch {}
+  setInverted(saved);
+})();
+</script>
+</body>
+</html>
