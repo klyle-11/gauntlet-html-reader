@@ -14,8 +14,8 @@ const count = (vol: string) => [...corpus.modules.values()].filter((m) => m.volu
 
 test('module counts per volume', () => {
   assert.deepEqual(
-    ['I', 'II', 'III', 'IV', 'V', 'VI'].map(count),
-    [25, 21, 13, 12, 13, 18],
+    ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'PHP'].map(count),
+    [25, 21, 13, 12, 13, 18, 5, 0],
   );
 });
 
@@ -108,4 +108,17 @@ test('build writes a self-contained site with no broken internal links', () => {
   }
   const v = readFileSync(join(out, 'VI-M61.html'), 'utf8');
   assert.match(v, /href="VI-M60.html"/, 'VI cross-references resolve within VI');
+});
+
+test('the companion book reads as chapters that link into Volume VII', () => {
+  const book = [...corpus.pages.values()].filter((p) => p.volume === 'PHP');
+  assert.equal(book.length, 14, 'introduction, chapters 0–10, glossary, references');
+  assert.ok(book.some((p) => p.title.startsWith('Chapter 7: Security')));
+  const out = mkdtempSync(join(tmpdir(), 'gauntlet-book-'));
+  build(out, corpus);
+  const intro = readFileSync(join(out, `${book[0].slug}.html`), 'utf8');
+  assert.match(intro, new RegExp(`href="${book.find((p) => p.title.startsWith('Chapter 0'))!.slug}\\.html"`), 'contents links resolve to chapter pages');
+  const last = readFileSync(join(out, `${book.find((p) => p.title.startsWith('Chapter 10'))!.slug}.html`), 'utf8');
+  assert.match(last, /href="VII-M78.html"/, 'module mentions link to Volume VII');
+  assert.match(readFileSync(join(out, 'index.html'), 'utf8'), /Companion book/);
 });

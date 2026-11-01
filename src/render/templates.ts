@@ -1,4 +1,4 @@
-import type { Corpus, Module, Page, Volume } from '../parser/types.ts';
+import type { Corpus, Module, Page, Volume, VolumeConfig } from '../parser/types.ts';
 
 export const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -6,6 +6,7 @@ export const esc = (s: string) =>
 export const moduleFile = (key: string) => `${key}.html`;
 export const pageFile = (slug: string) => `${slug}.html`;
 export const volumeFile = (id: string) => `vol-${id}.html`;
+export const volumeLabel = (c: VolumeConfig) => c.label ?? `Volume ${c.id}`;
 
 const SECTION_LABEL: Record<string, string> = {
   story: 'Story',

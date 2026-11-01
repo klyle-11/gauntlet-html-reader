@@ -58,6 +58,26 @@
       "moduleLevel": 1,
       "schema": "classic",
       "expectModules": 18
+    },
+    {
+      "id": "VII",
+      "title": "The Gauntlet VII — Steward: PHP & WordPress for the Sites You Keep",
+      "file": "docs/The_Gauntlet_VII_PHP_WordPress.md",
+      "idPrefix": "M",
+      "moduleLevel": 1,
+      "schema": "classic",
+      "expectModules": 5
+    },
+    {
+      "id": "PHP",
+      "title": "PHP and WordPress for Durable Client Work",
+      "subtitle": "The companion book to Volume VII",
+      "label": "Companion book",
+      "file": "docs/PHP_and_WordPress_for_Durable_Client_Work.md",
+      "idPrefix": "M",
+      "moduleLevel": 1,
+      "schema": "book",
+      "expectModules": 0
     }
   ],
   "stackIndex": {
@@ -70,6 +90,12 @@
     "moduleLevel": 2,
     "fallback": "Creative & Misc",
     "rules": [
+      {
+        "group": "PHP & WordPress",
+        "volumes": [
+          "VII"
+        ]
+      },
       {
         "group": "Leadership & Career",
         "pattern": "leadership|mentoring|conversational|interview"

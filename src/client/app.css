@@ -108,6 +108,8 @@ button, input, textarea, select { font: inherit; font-family: var(--sans); font-
 /* layout */
 .shell { display: grid; grid-template-columns: 14rem minmax(0, 46rem); gap: 3rem; justify-content: center; padding: 1.5rem 1.25rem 6rem; }
 .shell.single { grid-template-columns: minmax(0, 52rem); }
+/* Bare URLs in source shelves would otherwise push the page wider than a phone. */
+.prose { overflow-wrap: break-word; }
 .toc { position: sticky; top: 4.5rem; align-self: start; max-height: calc(100vh - 6rem); overflow-y: auto; font-family: var(--sans); font-size: 0.85rem; }
 .toc-title { font-weight: 700; margin: 0 0 0.5rem; }
 .toc ol { list-style: none; margin: 0; padding: 0; }

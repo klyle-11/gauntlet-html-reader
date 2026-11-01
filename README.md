@@ -26,6 +26,8 @@ Requires Node 22.18 or newer, which runs the TypeScript sources directly.
 | IV | `The_Gauntlet_IV_Microsoft_Enterprise_Developer.md` | M60–M71 | Uses a different section schema |
 | V | `local_first_reader_build_guide_v0_1 (1).md` | RR01–RR13 | "The Reading Room Gauntlet" (ch. 33) sits inside a 34-chapter build guide |
 | VI | `THE_GAUNTLET_V.md` | M60–M77 ⚠️ | Marginalia. It was written after V, so it is volume VI. Its own title says "IV", and its IDs collide with volume IV |
+| VII | `The_Gauntlet_VII_PHP_WordPress.md` | M78–M82 | Steward: PHP & WordPress for the sites you keep. Five modules |
+| Companion | `PHP_and_WordPress_for_Durable_Client_Work.md` | — | A book, not a gauntlet: chapters become reading pages under the "PHP" volume. `"label"` in `volumes.json` replaces the "Volume …" eyebrow, and `expectModules` is 0 |
 
 The volume number comes from build order, not from the filename or the title inside the file. The parser has to assign volume numbers from a manifest (see below) and must not trust either one.
 

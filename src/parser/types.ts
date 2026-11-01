@@ -18,6 +18,8 @@ export interface VolumeConfig {
   id: string;
   title: string;
   subtitle?: string;
+  /** Eyebrow text instead of "Volume <id>", e.g. for a companion book with no modules. */
+  label?: string;
   note?: string;
   file: string;
   /** Exact heading line where this volume starts inside `file` (inclusive). */

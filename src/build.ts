@@ -15,6 +15,7 @@ import {
   pageFile,
   sectionId,
   volumeFile,
+  volumeLabel,
 } from './render/templates.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -171,7 +172,7 @@ function volumeIndex(v: Volume, corpus: Corpus, render: (src: string) => string,
   const c = v.config;
   return `<div class="shell single"><main class="volume" data-volume="${esc(c.id)}">
   <nav class="crumbs"><a href="index.html">Home</a></nav>
-  <p class="eyebrow">Volume ${esc(c.id)}</p>
+  <p class="eyebrow">${esc(volumeLabel(c))}</p>
   <h1>${esc(c.title)}</h1>
   ${c.subtitle ? `<p class="lede">${esc(c.subtitle)}</p>` : ''}
   ${c.note ? `<p class="note">${esc(c.note)}</p>` : ''}
@@ -200,12 +201,16 @@ function home(corpus: Corpus, stackHtml: (m: Module) => string) {
   const vols = corpus.volumes
     .map((v) => {
       const keys = v.entries.filter((e) => e.kind === 'module').map((e) => (e as { key: string }).key);
-      const first = corpus.modules.get(keys[0])!;
-      const last = corpus.modules.get(keys[keys.length - 1])!;
+      const first = corpus.modules.get(keys[0]);
+      const last = corpus.modules.get(keys[keys.length - 1]);
+      // A companion book has reading pages and no modules.
+      const range = first && last ? ` · ${first.id}–${last.id}` : '';
+      const pages = v.entries.filter((e) => e.kind === 'page').length;
+      const count = keys.length ? `${keys.length} modules` : `${pages} chapters and pages`;
       return `<li class="vol-card"><a href="${volumeFile(v.config.id)}">
-  <span class="eyebrow">Volume ${esc(v.config.id)} · ${first.id}–${last.id}</span>
+  <span class="eyebrow">${esc(volumeLabel(v.config))}${range}</span>
   <span class="card-title">${esc(v.config.title)}</span>
-  <span class="muted">${keys.length} modules${v.config.subtitle ? ` · ${esc(v.config.subtitle)}` : ''}</span>
+  <span class="muted">${count}${v.config.subtitle ? ` · ${esc(v.config.subtitle)}` : ''}</span>
   <span class="vol-progress" data-volume-progress="${esc(v.config.id)}"></span>
 </a></li>`;
     })
@@ -216,7 +221,7 @@ function home(corpus: Corpus, stackHtml: (m: Module) => string) {
   );
   return `<div class="shell single"><main class="home">
   <h1>The Gauntlet</h1>
-  <p class="lede">${corpus.modules.size} modules across ${corpus.volumes.length} volumes. Read them, then do the work: decisions, research timeboxes, hints, measurements and code. Everything you write stays on this machine.</p>
+  <p class="lede">${corpus.modules.size} modules across ${corpus.volumes.filter((v) => v.entries.some((e) => e.kind === 'module')).length} volumes. Read them, then do the work: decisions, research timeboxes, hints, measurements and code. Everything you write stays on this machine.</p>
   <label class="search"><span class="sr">Search modules</span><input type="search" placeholder="Search modules by id, title or stack…" data-search-input></label>
   <ul class="cards search-results" data-search-results hidden>${all}</ul>
   <ul class="vol-grid">${vols}</ul>
