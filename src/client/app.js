@@ -1035,6 +1035,22 @@
         localStorage.setItem(NS + 'theme', next);
       } catch {}
     });
+    const skin = $('[data-action=skin]');
+    const showSkin = () => {
+      if (!skin) return;
+      const dots = document.documentElement.dataset.skin === 'dots';
+      skin.setAttribute('aria-pressed', String(dots));
+      skin.title = dots ? 'Dotted theme (switch to classic)' : 'Classic theme (switch to dotted)';
+    };
+    showSkin();
+    skin?.addEventListener('click', () => {
+      const next = document.documentElement.dataset.skin === 'dots' ? 'classic' : 'dots';
+      document.documentElement.dataset.skin = next;
+      showSkin();
+      try {
+        localStorage.setItem(NS + 'skin', next);
+      } catch {}
+    });
     $('[data-action=workspace]')?.addEventListener('click', () => {
       if (Disk.state === 'needs-permission') Disk.connect().then((ok) => ok && location.reload());
       else location.href = 'index.html#your-work';

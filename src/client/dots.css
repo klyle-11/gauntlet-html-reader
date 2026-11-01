@@ -1,0 +1,206 @@
+/* The "dots" skin: two colors, indigo navy and off-white, with polka dots where the
+   classic skin used tints and hairlines. Every rule is scoped to data-skin="dots", so
+   the classic look is untouched. The halftone ramps are appended by the build
+   (src/render/dots.ts). */
+
+:root[data-skin="dots"] {
+  --navy: #1d1633;
+  --cream: #fffffc;
+  --ink: var(--navy);
+  --paper: var(--cream);
+
+  --bg: var(--paper);
+  --surface: var(--paper);
+  --surface-2: var(--paper);
+  --text: var(--ink);
+  --muted: var(--ink);
+  --line: var(--ink);
+  --accent: var(--ink);
+  --accent-soft: var(--paper);
+  --on-accent: var(--paper);
+  --ok: var(--ink);
+  --ok-soft: var(--paper);
+  --warn: var(--ink);
+  --danger: var(--ink);
+  --code-bg: var(--paper);
+  --shadow: none;
+  --display: "Fraunces", Georgia, "Times New Roman", serif;
+  --serif: "DM Sans", ui-sans-serif, "Helvetica Neue", Arial, system-ui, sans-serif;
+  --sans: var(--serif);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-skin="dots"]:not([data-theme="light"]) { --ink: var(--cream); --paper: var(--navy); color-scheme: dark; }
+}
+:root[data-skin="dots"][data-theme="dark"] { --ink: var(--cream); --paper: var(--navy); color-scheme: dark; }
+
+/* A row of small dots, used wherever classic drew a hairline. */
+:root[data-skin="dots"] {
+  --dot-rule: radial-gradient(circle, var(--ink) 1.4px, transparent 2px) 0 50% / 8px 8px repeat-x;
+}
+
+:root[data-skin="dots"] body { font-size: 16.5px; line-height: 1.65; }
+:root[data-skin="dots"] ::selection { background: var(--ink); color: var(--paper); }
+:root[data-skin="dots"] :is(.band, .mod-head, .vol-card a) ::selection { background: var(--paper); color: var(--ink); }
+:root[data-skin="dots"] a { color: var(--ink); text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+:root[data-skin="dots"] a.xref { text-decoration-style: dotted; text-decoration-thickness: 2px; }
+:root[data-skin="dots"] :is(h1, h2) { font-family: var(--display); font-weight: 800; letter-spacing: -0.025em; line-height: 1.05; }
+:root[data-skin="dots"] h1 { font-size: clamp(2.2rem, 5vw, 3.3rem); }
+:root[data-skin="dots"] h2 { font-size: 1.7rem; }
+:root[data-skin="dots"] h3 { font-weight: 700; }
+:root[data-skin="dots"] :focus-visible,
+:root[data-skin="dots"] :is(input, textarea):focus { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* prose furniture */
+:root[data-skin="dots"] :not(pre) > code { background: none; border: 1.5px solid var(--ink); border-radius: 6px; padding: 0 0.3em; }
+:root[data-skin="dots"] pre { border: 2px solid var(--ink); border-radius: 14px; }
+:root[data-skin="dots"] blockquote {
+  border: 2px solid var(--ink); border-radius: 18px; padding: 0.4rem 1.2rem 0.4rem 2.1rem;
+  background: radial-gradient(circle, var(--ink) 2.2px, transparent 2.8px) 0.85rem 0.9rem / 8px 12px repeat-y, var(--paper);
+}
+:root[data-skin="dots"] th { border-bottom: 2px solid var(--ink); }
+:root[data-skin="dots"] td { border-bottom: 0; background: var(--dot-rule); background-position: 0 100%; background-size: 8px 4px; }
+:root[data-skin="dots"] hr { border: 0; height: 8px; background: var(--dot-rule); }
+
+/* top bar */
+:root[data-skin="dots"] .topbar {
+  background: radial-gradient(circle, var(--ink) 1.5px, transparent 2.1px) 0 100% / 9px 6px repeat-x, var(--paper);
+  backdrop-filter: none; border-bottom: 0; padding-bottom: 0.75rem;
+}
+:root[data-skin="dots"] .brand { font: 800 1.25rem/1 var(--display); letter-spacing: -0.02em; display: inline-flex; align-items: center; gap: 0.45rem; }
+:root[data-skin="dots"] .brand::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: currentColor; }
+:root[data-skin="dots"] .vols a { color: var(--ink); font-weight: 500; border-radius: 999px; }
+:root[data-skin="dots"] .vols a:hover { background: none; box-shadow: inset 0 0 0 2px var(--ink); }
+:root[data-skin="dots"] .vols a[aria-current] { background: var(--ink); color: var(--paper); }
+:root[data-skin="dots"] .topbar button { border: 2px solid var(--ink); border-radius: 999px; background: var(--paper); color: var(--ink); font-weight: 700; }
+:root[data-skin="dots"] .topbar button:hover { background: var(--ink); color: var(--paper); }
+
+/* page bands: a solid header that dissolves into the page through the ramp below it */
+:root[data-skin="dots"] .band { background: var(--ink); color: var(--paper); }
+:root[data-skin="dots"] .band-in { padding-top: clamp(2rem, 5vw, 3.5rem); padding-bottom: 0.5rem; }
+:root[data-skin="dots"] .band :is(a, .crumbs, .crumbs a, .eyebrow, .lede, h1) { color: var(--paper); }
+:root[data-skin="dots"] .band .eyebrow { font-weight: 700; letter-spacing: 0.16em; }
+:root[data-skin="dots"] .band .lede { font-size: 1.15rem; max-width: 40ch; }
+:root[data-skin="dots"] .band .note { background: none; border: 2px dotted var(--paper); color: var(--paper); }
+:root[data-skin="dots"] .band .vol-progress { color: var(--paper); font-weight: 700; }
+:root[data-skin="dots"] .band .search input { background: var(--paper); color: var(--ink); border: 2px solid var(--paper); border-radius: 999px; padding: 0.85rem 1.2rem; }
+:root[data-skin="dots"] .band .search input::placeholder { color: var(--ink); opacity: 1; }
+:root[data-skin="dots"] .band + .ramp + .shell { padding-top: 0.5rem; }
+
+/* volume covers on the home page: each volume is a notebook with its own dot size */
+:root[data-skin="dots"] .vol-grid { grid-template-columns: repeat(auto-fill, minmax(14.5rem, 1fr)); gap: 1.6rem 1.4rem; }
+:root[data-skin="dots"] .vol-card a {
+  --gap: 18px; --r: 3px;
+  position: relative; display: flex; align-items: flex-end; min-height: 15rem; padding: 1.1rem 1rem 1.1rem 2rem;
+  border: 2px solid var(--ink); border-radius: 6px 16px 16px 6px; box-shadow: 6px 6px 0 var(--ink);
+  background:
+    radial-gradient(circle, var(--paper) var(--r), transparent calc(var(--r) + 0.6px)) 0 0 / var(--gap) var(--gap),
+    radial-gradient(circle, var(--paper) var(--r), transparent calc(var(--r) + 0.6px)) calc(var(--gap) / 2) calc(var(--gap) / 2) / var(--gap) var(--gap),
+    var(--ink);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+:root[data-skin="dots"] .vol-card a::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 0.9rem; background: var(--ink); border-right: 2px solid var(--paper); border-radius: 4px 0 0 4px; }
+:root[data-skin="dots"] .vol-card a:hover { border-color: var(--ink); transform: translate(-3px, -3px) rotate(-1deg); box-shadow: 9px 9px 0 var(--ink); }
+:root[data-skin="dots"] .vol-label { position: relative; width: 100%; background: var(--paper); border: 2px solid var(--ink); border-radius: 6px; padding: 0.65rem 0.75rem; }
+:root[data-skin="dots"] .vol-label .card-title { font: 800 1.08rem/1.15 var(--display); }
+:root[data-skin="dots"] .vol-label .eyebrow { margin: 0 0 0.3rem; font-weight: 700; letter-spacing: 0.08em; font-size: 0.7rem; }
+:root[data-skin="dots"] .vol-label .vol-progress { color: var(--ink); font-weight: 700; }
+:root[data-skin="dots"] .vol-card:nth-child(8n + 1) a { --gap: 14px; --r: 1.6px; }
+:root[data-skin="dots"] .vol-card:nth-child(8n + 2) a { --gap: 30px; --r: 6px; }
+:root[data-skin="dots"] .vol-card:nth-child(8n + 3) a { --gap: 20px; --r: 3.6px; }
+:root[data-skin="dots"] .vol-card:nth-child(8n + 4) a { --gap: 40px; --r: 9px; }
+:root[data-skin="dots"] .vol-card:nth-child(8n + 5) a { --gap: 16px; --r: 2.4px; }
+:root[data-skin="dots"] .vol-card:nth-child(8n + 6) a { --gap: 24px; --r: 5px; }
+:root[data-skin="dots"] .vol-card:nth-child(8n + 7) a { --gap: 34px; --r: 4px; }
+:root[data-skin="dots"] .vol-card:nth-child(8n + 8) a { --gap: 12px; --r: 2px; }
+
+/* module and page cards */
+:root[data-skin="dots"] .card a {
+  border: 2px solid var(--ink); border-radius: 16px; padding: 0.85rem 1rem; background: var(--paper);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+:root[data-skin="dots"] .card a:hover { border-color: var(--ink); transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--ink); }
+:root[data-skin="dots"] .card-title { font: 800 1.12rem/1.2 var(--display); }
+:root[data-skin="dots"] .card.complete a { position: relative; }
+:root[data-skin="dots"] .card.complete a::after { content: ""; position: absolute; top: 0.85rem; right: 0.9rem; width: 14px; height: 14px; border-radius: 50%; background: var(--ink); }
+:root[data-skin="dots"] .chip { border: 1.5px solid currentColor; background: none; color: inherit; font-weight: 600; }
+:root[data-skin="dots"] .chip.id { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+:root[data-skin="dots"] h2 .count { display: inline-grid; place-items: center; min-width: 1.7rem; height: 1.7rem; padding: 0 0.4rem; border-radius: 999px; background: var(--ink); color: var(--paper); font: 700 0.8rem/1 var(--sans); vertical-align: middle; }
+:root[data-skin="dots"] .reading-list a { text-decoration: none; background: radial-gradient(circle, var(--ink) 1px, transparent 1.5px) 0 100% / 6px 3px repeat-x; padding-bottom: 3px; }
+:root[data-skin="dots"] .reading-list a:hover { background-size: 6px 4px; background-image: linear-gradient(var(--ink), var(--ink)); background-size: 100% 2px; }
+:root[data-skin="dots"] .search input { border: 2px solid var(--ink); border-radius: 999px; padding: 0.8rem 1.2rem; }
+
+/* module pages: the header is a navy cover with dots growing to its edge */
+:root[data-skin="dots"] .mod-head { color: var(--paper); border-radius: 24px; padding: 1.6rem 1.6rem 1.8rem; margin: 0.75rem 0 2rem; }
+:root[data-skin="dots"] .mod-head h1 { color: var(--paper); margin: 0.6rem 0 0.4rem; }
+:root[data-skin="dots"] .mod-head .stack { color: var(--paper); font-weight: 500; }
+:root[data-skin="dots"] .mod-head .chip.id { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+:root[data-skin="dots"] .mod-head code { border-color: var(--paper); }
+:root[data-skin="dots"] .sec { border-top: 0; background: var(--dot-rule); background-position: 0 0; background-size: 8px 8px; padding-top: 0.25rem; }
+:root[data-skin="dots"] .sec:first-of-type, :root[data-skin="dots"] .sec-lead, :root[data-skin="dots"] .sec-story { background: none; }
+:root[data-skin="dots"] .sec-story > blockquote:first-child { background: radial-gradient(circle, var(--ink) 2.2px, transparent 2.8px) 0.85rem 0.9rem / 8px 12px repeat-y, var(--paper); }
+:root[data-skin="dots"] .toc-title { font: 800 1.4rem/1 var(--display); }
+:root[data-skin="dots"] .toc li a { color: var(--ink); border-radius: 999px; }
+:root[data-skin="dots"] .toc li a:hover { background: none; box-shadow: inset 0 0 0 2px var(--ink); }
+:root[data-skin="dots"] .toc-steps { border-left: 0; background: radial-gradient(circle, var(--ink) 1.2px, transparent 1.7px) 0 0 / 3px 7px repeat-y; padding-left: 0.85rem; }
+:root[data-skin="dots"] .toc-ws { border-top: 0; background: var(--dot-rule); background-position: 0 0; background-size: 8px 4px; }
+
+/* progress: a track of small dots, filled solid as work gets done */
+:root[data-skin="dots"] .bar { height: 10px; background: radial-gradient(circle, var(--ink) 1.3px, transparent 1.9px) 0 50% / 7px 10px repeat-x; }
+:root[data-skin="dots"] .bar > span { background: var(--ink); }
+
+/* checkboxes are dots that fill in */
+:root[data-skin="dots"] input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none; margin: 0; flex: none;
+  width: 1.1rem; height: 1.1rem; border: 2px solid var(--ink); border-radius: 50%; background: var(--paper); cursor: pointer;
+  transition: box-shadow 0.15s, background-color 0.15s;
+}
+:root[data-skin="dots"] input[type="checkbox"]:checked { background: var(--ink); box-shadow: inset 0 0 0 2.5px var(--paper); }
+:root[data-skin="dots"] .checklist > li > input[type="checkbox"] { top: 0.3em; }
+:root[data-skin="dots"] .checklist > li.done > :not(input) { text-decoration: none; }
+:root[data-skin="dots"] .sec-groundfloor :is(h3, h4).done::after { content: ""; display: inline-block; width: 0.55em; height: 0.55em; margin-left: 0.4em; border-radius: 50%; background: var(--ink); vertical-align: 0.12em; }
+
+/* controls */
+:root[data-skin="dots"] button { border: 2px solid var(--ink); border-radius: 999px; background: var(--ink); color: var(--paper); font-weight: 700; padding: 0.4rem 0.9rem; }
+:root[data-skin="dots"] button:not(:disabled):hover { background: var(--paper); color: var(--ink); }
+:root[data-skin="dots"] button.ghost, :root[data-skin="dots"] .timer-btn { background: var(--paper); color: var(--ink) !important; border-color: var(--ink); }
+:root[data-skin="dots"] button.ghost:not(:disabled):hover, :root[data-skin="dots"] .timer-btn:hover { background: var(--ink); color: var(--paper) !important; }
+:root[data-skin="dots"] button.danger { color: var(--ink); background: var(--paper); border-style: dashed; }
+:root[data-skin="dots"] button.x { background: none; border: 0; color: var(--ink); }
+:root[data-skin="dots"] button:disabled { opacity: 1; background: var(--paper); color: var(--ink); border-style: dotted; }
+:root[data-skin="dots"] input:not([type="checkbox"]), :root[data-skin="dots"] textarea { border: 2px solid var(--ink); border-radius: 12px; background: var(--paper); }
+:root[data-skin="dots"] textarea.code { border-radius: 14px; }
+:root[data-skin="dots"] .tabs button[role="tab"] { background: var(--paper); color: var(--ink); border-color: var(--ink); }
+:root[data-skin="dots"] .tabs button[aria-selected="true"] { background: var(--ink); color: var(--paper); }
+
+:root[data-skin="dots"] details.dsa { border: 2px dotted var(--ink); border-radius: 14px; padding: 0.5rem 0.9rem; }
+:root[data-skin="dots"] details.dsa.decided { border-style: solid; }
+:root[data-skin="dots"] details.dsa summary, :root[data-skin="dots"] .gf-notes summary { color: var(--ink); }
+:root[data-skin="dots"] details.ladder { border: 2px solid var(--ink); border-radius: 14px; }
+:root[data-skin="dots"] ul.plain li { border-bottom: 0; background: var(--dot-rule); background-position: 0 100%; background-size: 8px 4px; }
+:root[data-skin="dots"] .orphans, :root[data-skin="dots"] .note { border: 2px dotted var(--ink); border-radius: 14px; background: none; }
+:root[data-skin="dots"] .data-panel { border: 2px solid var(--ink); border-radius: 22px; box-shadow: 6px 6px 0 var(--ink); }
+
+/* pager */
+:root[data-skin="dots"] .pager a { border: 2px solid var(--ink); border-radius: 16px; transition: transform 0.15s, box-shadow 0.15s; }
+:root[data-skin="dots"] .pager a:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--ink); }
+:root[data-skin="dots"] .pager a span { font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.7rem; }
+
+/* floating bits */
+:root[data-skin="dots"] .timerbar { background: var(--ink); color: var(--paper); border: 2px solid var(--ink); box-shadow: 5px 5px 0 var(--paper), 5px 5px 0 2px var(--ink); }
+:root[data-skin="dots"] .timerbar .what { color: var(--paper); }
+:root[data-skin="dots"] .timerbar button { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+:root[data-skin="dots"] .timerbar.over { background: var(--paper); color: var(--ink); border-style: dashed; }
+:root[data-skin="dots"] .timerbar.over :is(.what, .time) { color: var(--ink); }
+:root[data-skin="dots"] .toast { background: var(--ink); color: var(--paper); border-radius: 999px; padding: 0.65rem 1.1rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-skin="dots"] :is(.vol-card a, .card a, .pager a, input[type="checkbox"]) { transition: none; }
+}
+@media print {
+  :root[data-skin="dots"] .band { background: none; color: #000; }
+  :root[data-skin="dots"] .band :is(a, .crumbs, .eyebrow, .lede, h1) { color: #000; }
+  :root[data-skin="dots"] .ramp { display: none; }
+  :root[data-skin="dots"] .mod-head { background: none; color: #000; padding: 0; }
+  :root[data-skin="dots"] .mod-head :is(h1, .stack) { color: #000; }
+}

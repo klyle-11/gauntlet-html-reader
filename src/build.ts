@@ -5,7 +5,9 @@ import { parseCorpus } from './parser/index.ts';
 import { githubSlug, headings } from './parser/split.ts';
 import type { Corpus, Module, Volume } from './parser/types.ts';
 import { createRenderer, type LinkContext } from './render/markdown.ts';
+import { dotsRampCss } from './render/dots.ts';
 import {
+  band,
   esc,
   layout,
   moduleBody,
@@ -85,8 +87,10 @@ export function build(outDir: string, corpus = parseCorpus(ROOT)) {
     mermaidSrc = 'assets/mermaid.min.js';
   }
   for (const f of ['app.css', 'app.js']) copyFileSync(resolve(ROOT, 'src/client', f), resolve(outDir, 'assets', f));
-  // The stylesheet again as a script, so "Export HTML" can inline it even from file:// (where fetch and cssRules are blocked).
-  const css = readFileSync(resolve(ROOT, 'src/client/app.css'), 'utf8');
+  const dotsCss = readFileSync(resolve(ROOT, 'src/client/dots.css'), 'utf8') + dotsRampCss();
+  writeFileSync(resolve(outDir, 'assets/dots.css'), dotsCss);
+  // The stylesheets again as a script, so "Export HTML" can inline them even from file:// (where fetch and cssRules are blocked).
+  const css = readFileSync(resolve(ROOT, 'src/client/app.css'), 'utf8') + '\n' + dotsCss;
   writeFileSync(resolve(outDir, 'assets/export-css.js'), `window.GAUNTLET_CSS=${JSON.stringify(css)};\n`);
 
   const write = (file: string, html: string) => writeFileSync(resolve(outDir, file), html);
@@ -170,15 +174,17 @@ function volumeIndex(v: Volume, corpus: Corpus, render: (src: string) => string,
   }
   flush();
   const c = v.config;
-  return `<div class="shell single"><main class="volume" data-volume="${esc(c.id)}">
-  <nav class="crumbs"><a href="index.html">Home</a></nav>
+  return `<main class="volume" data-volume="${esc(c.id)}">
+${band(`<nav class="crumbs"><a href="index.html">Home</a></nav>
   <p class="eyebrow">${esc(volumeLabel(c))}</p>
   <h1>${esc(c.title)}</h1>
   ${c.subtitle ? `<p class="lede">${esc(c.subtitle)}</p>` : ''}
   ${c.note ? `<p class="note">${esc(c.note)}</p>` : ''}
-  <div class="vol-progress" data-volume-progress="${esc(c.id)}"></div>
+  <div class="vol-progress" data-volume-progress="${esc(c.id)}"></div>`)}
+<div class="shell single"><div>
   ${parts.join('\n')}
-</main></div>`;
+</div></div>
+</main>`;
 }
 
 function stackIndex(corpus: Corpus, stackHtml: (m: Module) => string) {
@@ -188,13 +194,15 @@ function stackIndex(corpus: Corpus, stackHtml: (m: Module) => string) {
 <ul class="cards">${g.keys.map((k) => moduleCard(corpus.modules.get(k)!, stackHtml(corpus.modules.get(k)!))).join('')}</ul>`,
     )
     .join('\n');
-  return `<div class="shell single"><main class="volume">
-  <nav class="crumbs"><a href="index.html">Home</a></nav>
+  return `<main class="volume">
+${band(`<nav class="crumbs"><a href="index.html">Home</a></nav>
   <p class="eyebrow">All volumes</p>
   <h1>By stack</h1>
-  <p class="lede">All ${corpus.modules.size} builds from every volume, grouped by subject, language and stack.</p>
+  <p class="lede">All ${corpus.modules.size} builds from every volume, grouped by subject, language and stack.</p>`)}
+<div class="shell single"><div>
   ${groups}
-</main></div>`;
+</div></div>
+</main>`;
 }
 
 function home(corpus: Corpus, stackHtml: (m: Module) => string) {
@@ -207,27 +215,29 @@ function home(corpus: Corpus, stackHtml: (m: Module) => string) {
       const range = first && last ? ` · ${first.id}–${last.id}` : '';
       const pages = v.entries.filter((e) => e.kind === 'page').length;
       const count = keys.length ? `${keys.length} modules` : `${pages} chapters and pages`;
-      return `<li class="vol-card"><a href="${volumeFile(v.config.id)}">
+      return `<li class="vol-card"><a href="${volumeFile(v.config.id)}"><span class="vol-label">
   <span class="eyebrow">${esc(volumeLabel(v.config))}${range}</span>
   <span class="card-title">${esc(v.config.title)}</span>
   <span class="muted">${count}${v.config.subtitle ? ` · ${esc(v.config.subtitle)}` : ''}</span>
   <span class="vol-progress" data-volume-progress="${esc(v.config.id)}"></span>
-</a></li>`;
+</span></a></li>`;
     })
     .join('');
   const all = [...corpus.modules.values()].map((m) => moduleCard(m, stackHtml(m))).join('');
   const catalog = JSON.stringify(
     Object.fromEntries(corpus.volumes.map((v) => [v.config.id, v.entries.filter((e) => e.kind === 'module').map((e) => (e as { key: string }).key)])),
   );
-  return `<div class="shell single"><main class="home">
-  <h1>The Gauntlet</h1>
+  return `<main class="home">
+${band(`<h1>The Gauntlet</h1>
   <p class="lede">${corpus.modules.size} modules across ${corpus.volumes.filter((v) => v.entries.some((e) => e.kind === 'module')).length} volumes. Read them, then do the work: decisions, research timeboxes, hints, measurements and code. Everything you write stays on this machine.</p>
-  <label class="search"><span class="sr">Search modules</span><input type="search" placeholder="Search modules by id, title or stack…" data-search-input></label>
+  <label class="search"><span class="sr">Search modules</span><input type="search" placeholder="Search modules by id, title or stack…" data-search-input></label>`)}
+<div class="shell single"><div>
   <ul class="cards search-results" data-search-results hidden>${all}</ul>
   <ul class="vol-grid">${vols}</ul>
   <section class="data-panel" data-widget="data-panel"><h2>Your work</h2></section>
   <script type="application/json" id="catalog">${catalog}</script>
-</main></div>`;
+</div></div>
+</main>`;
 }
 
 const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);

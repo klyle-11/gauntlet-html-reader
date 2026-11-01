@@ -8,6 +8,15 @@ export const pageFile = (slug: string) => `${slug}.html`;
 export const volumeFile = (id: string) => `vol-${id}.html`;
 export const volumeLabel = (c: VolumeConfig) => c.label ?? `Volume ${c.id}`;
 
+// Display and text faces for the dots skin. Loaded without blocking; offline, the system fonts take over.
+const FONTS = 'https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fraunces:opsz,wght@9..144,800&display=swap';
+
+/** A page's heading block. The dots skin paints it solid and dissolves it into the page through the ramp. */
+export function band(inner: string): string {
+  return `<header class="band"><div class="band-in">${inner}</div></header>
+<div class="ramp" aria-hidden="true"></div>`;
+}
+
 const SECTION_LABEL: Record<string, string> = {
   story: 'Story',
   lead: '',
@@ -28,14 +37,16 @@ export function layout(o: LayoutOpts): string {
     .map((v) => `<a href="${volumeFile(v.config.id)}"${o.volume === v.config.id ? ' aria-current="page"' : ''}>${esc(v.config.id)}</a>`)
     .join('');
   return `<!doctype html>
-<html lang="en">
+<html lang="en" data-skin="dots">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(o.title)} · Gauntlet</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="assets/app.css">
-<script>try{var t=localStorage.getItem('gauntlet:theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="stylesheet" href="assets/dots.css">
+<link rel="stylesheet" href="${FONTS}" media="print" onload="this.media='all'">
+<script>try{var d=document.documentElement,t=localStorage.getItem('gauntlet:theme'),s=localStorage.getItem('gauntlet:skin');if(t)d.dataset.theme=t;if(s)d.dataset.skin=s}catch(e){}</script>
 </head>
 <body ${o.bodyAttrs ?? ''}>
 <header class="topbar">
@@ -44,6 +55,7 @@ export function layout(o: LayoutOpts): string {
   <span class="spacer"></span>
   <button class="export-html" type="button" data-action="export-html" title="Download this page as a standalone HTML file">Export HTML</button>
   <button class="ws-status" type="button" data-action="workspace" title="Where your work is saved">Browser storage</button>
+  <button class="icon skin" type="button" data-action="skin" title="Dotted theme (switch to classic)" aria-label="Dotted theme" aria-pressed="true"></button>
   <button class="icon" type="button" data-action="theme" title="Toggle theme" aria-label="Toggle theme">◐</button>
 </header>
 ${o.body}

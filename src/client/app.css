@@ -102,12 +102,19 @@ button, input, textarea, select { font: inherit; font-family: var(--sans); font-
 .vols a:hover, .vols a[aria-current] { background: var(--surface-2); color: var(--text); }
 .spacer { flex: 1; }
 .topbar button { border: 1px solid var(--line); background: var(--surface); color: var(--text); border-radius: 6px; padding: 0.25rem 0.6rem; cursor: pointer; white-space: nowrap; }
+.skin::before { content: ""; display: inline-block; width: 0.6em; height: 0.6em; border-radius: 50%; background: currentColor; box-shadow: 0.42em 0.18em 0 -0.12em currentColor; }
 .ws-status[data-state="on"] { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); }
 .ws-status[data-state="needs-permission"] { color: var(--warn); }
 
 /* layout */
 .shell { display: grid; grid-template-columns: 14rem minmax(0, 46rem); gap: 3rem; justify-content: center; padding: 1.5rem 1.25rem 6rem; }
 .shell.single { grid-template-columns: minmax(0, 52rem); }
+/* Page heading bands. The classic skin keeps them plain and in the text column; the dots skin paints them. */
+.band-in { max-width: calc(52rem + 2.5rem); margin: 0 auto; padding: 1.5rem 1.25rem 0; }
+.band-in > :last-child { margin-bottom: 0; }
+.band + .ramp + .shell { padding-top: 0.75rem; }
+.ramp { display: none; }
+.vol-label { display: grid; gap: 0.2rem; }
 /* Bare URLs in source shelves would otherwise push the page wider than a phone. */
 .prose { overflow-wrap: break-word; }
 .toc { position: sticky; top: 4.5rem; align-self: start; max-height: calc(100vh - 6rem); overflow-y: auto; font-family: var(--sans); font-size: 0.85rem; }
@@ -122,6 +129,7 @@ button, input, textarea, select { font: inherit; font-family: var(--sans); font-
 .bar { display: block; height: 6px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
 .bar > span { display: block; height: 100%; background: var(--ok); border-radius: 99px; transition: width 0.3s; }
 @media (max-width: 900px) {
+  .band-in { padding-inline: 1rem; }
   .shell { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 1rem 1rem 6rem; }
   .toc { display: none; }
   body { font-size: 16px; }
@@ -258,7 +266,10 @@ ul.plain li.done span { text-decoration: line-through; color: var(--muted); }
 }
 
 @media (max-width: 600px) {
-  .topbar { gap: 0.5rem; }
-  .vols { flex: 1; min-width: 0; }
-  .spacer, .ws-status { display: none; }
+  /* Volume links get their own scrolling row, so the buttons can't squeeze them out. */
+  html { scroll-padding-top: 7rem; }
+  .topbar { gap: 0.5rem; flex-wrap: wrap; }
+  .topbar .spacer { display: block; }
+  .vols { order: 1; flex: 1 0 100%; min-width: 0; }
+  .ws-status { display: none; }
 }
