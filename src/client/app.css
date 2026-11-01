@@ -112,8 +112,7 @@ button, input, textarea, select { font: inherit; font-family: var(--sans); font-
 /* Page heading bands. The classic skin keeps them plain and in the text column; the dots skin paints them. */
 .band-in { max-width: calc(52rem + 2.5rem); margin: 0 auto; padding: 1.5rem 1.25rem 0; }
 .band-in > :last-child { margin-bottom: 0; }
-.band + .ramp + .shell { padding-top: 0.75rem; }
-.ramp { display: none; }
+.band + .shell { padding-top: 0.75rem; }
 .vol-label { display: grid; gap: 0.2rem; }
 /* Bare URLs in source shelves would otherwise push the page wider than a phone. */
 .prose { overflow-wrap: break-word; }

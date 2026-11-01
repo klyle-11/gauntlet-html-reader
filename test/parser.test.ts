@@ -123,12 +123,10 @@ test('the companion book reads as chapters that link into Volume VII', () => {
   assert.match(readFileSync(join(out, 'index.html'), 'utf8'), /Companion book/);
 });
 
-test('pages default to the dots skin, and its ramps are generated', () => {
+test('pages default to the dots skin, and Export HTML carries it', () => {
   const out = mkdtempSync(join(tmpdir(), 'gauntlet-dots-'));
   build(out, corpus);
   assert.match(readFileSync(join(out, 'index.html'), 'utf8'), /<html lang="en" data-skin="dots">/);
-  const css = readFileSync(join(out, 'assets/dots.css'), 'utf8');
-  assert.match(css, /:root\[data-skin="dots"\] \.ramp \{/);
-  assert.ok((css.match(/radial-gradient\(circle, var\(--ramp-dot\)/g) ?? []).length > 30, 'one layer per row of dots');
+  assert.match(readFileSync(join(out, 'assets/dots.css'), 'utf8'), /:root\[data-skin="dots"\] body \{/);
   assert.match(readFileSync(join(out, 'assets/export-css.js'), 'utf8'), /data-skin=/, 'Export HTML carries the skin too');
 });

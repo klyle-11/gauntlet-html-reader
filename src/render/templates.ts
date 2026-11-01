@@ -11,10 +11,9 @@ export const volumeLabel = (c: VolumeConfig) => c.label ?? `Volume ${c.id}`;
 // Display and text faces for the dots skin. Loaded without blocking; offline, the system fonts take over.
 const FONTS = 'https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fraunces:opsz,wght@9..144,800&display=swap';
 
-/** A page's heading block. The dots skin paints it solid and dissolves it into the page through the ramp. */
+/** A page's heading block. The dots skin sets it on a solid navy panel. */
 export function band(inner: string): string {
-  return `<header class="band"><div class="band-in">${inner}</div></header>
-<div class="ramp" aria-hidden="true"></div>`;
+  return `<header class="band"><div class="band-in">${inner}</div></header>`;
 }
 
 const SECTION_LABEL: Record<string, string> = {

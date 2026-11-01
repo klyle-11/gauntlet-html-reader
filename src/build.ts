@@ -5,7 +5,6 @@ import { parseCorpus } from './parser/index.ts';
 import { githubSlug, headings } from './parser/split.ts';
 import type { Corpus, Module, Volume } from './parser/types.ts';
 import { createRenderer, type LinkContext } from './render/markdown.ts';
-import { dotsRampCss } from './render/dots.ts';
 import {
   band,
   esc,
@@ -87,8 +86,8 @@ export function build(outDir: string, corpus = parseCorpus(ROOT)) {
     mermaidSrc = 'assets/mermaid.min.js';
   }
   for (const f of ['app.css', 'app.js']) copyFileSync(resolve(ROOT, 'src/client', f), resolve(outDir, 'assets', f));
-  const dotsCss = readFileSync(resolve(ROOT, 'src/client/dots.css'), 'utf8') + dotsRampCss();
-  writeFileSync(resolve(outDir, 'assets/dots.css'), dotsCss);
+  copyFileSync(resolve(ROOT, 'src/client/dots.css'), resolve(outDir, 'assets/dots.css'));
+  const dotsCss = readFileSync(resolve(ROOT, 'src/client/dots.css'), 'utf8');
   // The stylesheets again as a script, so "Export HTML" can inline them even from file:// (where fetch and cssRules are blocked).
   const css = readFileSync(resolve(ROOT, 'src/client/app.css'), 'utf8') + '\n' + dotsCss;
   writeFileSync(resolve(outDir, 'assets/export-css.js'), `window.GAUNTLET_CSS=${JSON.stringify(css)};\n`);
