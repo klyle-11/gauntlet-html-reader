@@ -89,7 +89,8 @@ export function build(outDir: string, corpus = parseCorpus(ROOT)) {
   copyFileSync(resolve(ROOT, 'src/client/dots.css'), resolve(outDir, 'assets/dots.css'));
   const dotsCss = readFileSync(resolve(ROOT, 'src/client/dots.css'), 'utf8');
   // The stylesheets again as a script, so "Export HTML" can inline them even from file:// (where fetch and cssRules are blocked).
-  const css = readFileSync(resolve(ROOT, 'src/client/app.css'), 'utf8') + '\n' + dotsCss;
+  // An exported page has no script to set data-theme, so its dark rules follow a checkbox instead. :where keeps the specificity of the attribute it replaces.
+  const css = (readFileSync(resolve(ROOT, 'src/client/app.css'), 'utf8') + '\n' + dotsCss).replaceAll('[data-theme="dark"]', '[data-theme]:where(:has(.theme-switch:checked))');
   writeFileSync(resolve(outDir, 'assets/export-css.js'), `window.GAUNTLET_CSS=${JSON.stringify(css)};\n`);
 
   const write = (file: string, html: string) => writeFileSync(resolve(outDir, file), html);

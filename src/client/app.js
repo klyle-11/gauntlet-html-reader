@@ -1002,6 +1002,52 @@
 
   // ---------------------------------------------------------------- misc
 
+  const isDark = () => {
+    const t = document.documentElement.dataset.theme;
+    return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  };
+
+  /**
+   * Makes a cloned page work with no script at all, because hosts like cs-learning's hub run none:
+   * what HTML does by itself stays (checkboxes, text fields, details), the rest is rebuilt from those or removed.
+   */
+  function makeStatic(root) {
+    // Mermaid draws in the colours of the theme it was drawn in, so a diagram keeps that theme's background.
+    const paper = getComputedStyle(document.documentElement).getPropertyValue('--bg');
+    $$('pre.mermaid svg', root).forEach((svg) => (svg.style.background = paper));
+
+    // The file tabs need a script, so every file gets its own field.
+    const editor = $('.editor', root);
+    if (editor) {
+      const files = Object.entries(Store.load($('main[data-module]').dataset.module).files);
+      if (files.length) editor.replaceChildren(h('h3', 'Code'), ...files.flatMap(([name, text]) => [h('h4', name), h('textarea.code', { spellcheck: 'false', 'aria-label': name }, text)]));
+      else editor.remove();
+    }
+
+    // Hints not yet revealed: each opens inside the one before, so the ladder still goes one rung at a time.
+    $$('details.ladder', root).forEach((ladder) => {
+      let host = null;
+      $$(':scope > p[hidden]', ladder).forEach((rung) => {
+        const label = rung.firstElementChild.textContent.replace(/[:.]\s*$/, '');
+        const open = h('details.rung', h('summary', `Reveal: ${label}`));
+        if (host) host.append(open);
+        else rung.before(open);
+        rung.hidden = false;
+        open.append(rung);
+        host = open;
+      });
+    });
+
+    // The CSS shows these from the checkbox itself, so unticking one clears it.
+    $$('.done', root).forEach((el) => el.classList.remove('done'));
+
+    const note = $('#workspace > p.muted', root);
+    if (note) note.textContent = 'This is a standalone copy: what you tick or type here is lost when the page reloads.';
+    $$('button, .tabs, .row, .search, .pager, .crumbs, [data-progress], [data-card-progress], [data-widget=data-panel]', root).forEach((el) => el.remove());
+    $$('.listw', root).filter((el) => !$('li', el)).forEach((el) => el.remove());
+    $$('.measure-log', root).filter((el) => !$('tbody tr', el)).forEach((el) => el.remove());
+  }
+
   /** Saves the page as it is now (your notes and checks included) as one standalone file: inlined CSS, no scripts. */
   function exportHtml() {
     const root = document.documentElement.cloneNode(true);
@@ -1014,9 +1060,17 @@
       else el.setAttribute('value', src.value);
     });
     $$('script, .topbar, .timerbar, .toast, link[rel=stylesheet]', root).forEach((el) => el.remove());
+    makeStatic(root);
     $$('a[href]', root).forEach((a) => {
       if (!a.getAttribute('href').startsWith('#')) a.removeAttribute('href');
     });
+    // The switch is a plain checkbox the stylesheet reads, starting as the page looks now. data-theme="light" keeps the OS preference out of it.
+    root.dataset.theme = 'light';
+    $('body', root).prepend(
+      h('input.theme-switch', { type: 'checkbox', id: 'theme-switch', 'aria-label': 'Dark theme', checked: null }),
+      h('label.theme-switch-label', { for: 'theme-switch', title: 'Switch between light and dark', 'aria-hidden': 'true' }, '◐'),
+    );
+    $('.theme-switch', root).toggleAttribute('checked', isDark());
     const style = document.createElement('style');
     style.textContent = window.GAUNTLET_CSS || '';
     $('head', root).append(style);
@@ -1027,9 +1081,7 @@
   function initChrome() {
     $('[data-action=export-html]')?.addEventListener('click', exportHtml);
     $('[data-action=theme]')?.addEventListener('click', () => {
-      const cur = document.documentElement.dataset.theme;
-      const dark = cur ? cur === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-      const next = dark ? 'light' : 'dark';
+      const next = isDark() ? 'light' : 'dark';
       document.documentElement.dataset.theme = next;
       try {
         localStorage.setItem(NS + 'theme', next);
@@ -1062,9 +1114,7 @@
 
   window.renderMermaid = () => {
     if (!window.mermaid) return;
-    const t = document.documentElement.dataset.theme;
-    const dark = t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-    window.mermaid.initialize({ startOnLoad: false, theme: dark ? 'dark' : 'default', securityLevel: 'strict' });
+    window.mermaid.initialize({ startOnLoad: false, theme: isDark() ? 'dark' : 'default', securityLevel: 'strict' });
     window.mermaid.run({ querySelector: 'pre.mermaid' });
   };
 

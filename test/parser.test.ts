@@ -128,5 +128,8 @@ test('pages default to the dots skin, and Export HTML carries it', () => {
   build(out, corpus);
   assert.match(readFileSync(join(out, 'index.html'), 'utf8'), /<html lang="en" data-skin="dots">/);
   assert.match(readFileSync(join(out, 'assets/dots.css'), 'utf8'), /:root\[data-skin="dots"\] body \{/);
-  assert.match(readFileSync(join(out, 'assets/export-css.js'), 'utf8'), /data-skin=/, 'Export HTML carries the skin too');
+  const exportCss = readFileSync(join(out, 'assets/export-css.js'), 'utf8');
+  assert.match(exportCss, /data-skin=/, 'Export HTML carries the skin too');
+  assert.match(exportCss, /:has\(\.theme-switch:checked\)/, 'Export HTML switches theme with no script');
+  assert.doesNotMatch(exportCss, /\[data-theme=\\"dark\\"\]/, 'no dark rule waits on a script to set data-theme');
 });
